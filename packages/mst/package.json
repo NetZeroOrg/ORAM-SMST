@@ -9,13 +9,14 @@
     "lint": "echo 'Add lint script here'"
   },
   "dependencies": {
-    "circuits": "workspace:*",
     "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "circuits": "workspace:*",
+    "o1js": "2.0.0"
   },
   "devDependencies": {
-    "circuits": "workspace:*",
     "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "circuits": "workspace:*"
   }
 }
