@@ -10,6 +10,7 @@
     "test:watch": "turbo run test:watch"
   },
   "devDependencies": {
+    "@types/node": "^22.10.5",
     "prettier": "^3.2.5",
     "turbo": "^2.3.3",
     "typescript": "5.5.4"

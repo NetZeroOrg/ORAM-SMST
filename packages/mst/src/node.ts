@@ -1,10 +1,10 @@
 import { Field, Poseidon } from "o1js";
 
 /**
- * The Node class represents a node in the Merkle Sum Tree. The node can be a leaf node or an internal node.
+ * The MSTNode class represents a node in the Merkle Sum Tree. The node can be a leaf node or an internal node.
  * @member hash : the hash for the node
  */
-export class Node {
+export class MSTNode {
     public hash: Field
     public balances: Field[]
 
@@ -23,10 +23,10 @@ export class Node {
      * @param balances balances of user for the number of tokens
      * @returns a leaf node
      */
-    static leaf(username: string, balances: bigint[]): Node {
+    static leaf(username: string, balances: bigint[]): MSTNode {
         let balancesField = balances.map((balance) => Field(balance));
         let hash = Poseidon.hash([Field(username), ...balancesField]);
-        return new Node(hash, balancesField);
+        return new MSTNode(hash, balancesField);
     }
 
     /**
@@ -36,9 +36,9 @@ export class Node {
      * @param right_child the right child foir the internal node
      * @returns an internal node with the hash and balances 
      */
-    static internal_node(left_child: Node, right_child: Node): Node {
+    static internal_node(left_child: MSTNode, right_child: MSTNode): MSTNode {
         let netBalances = left_child.balances.map((balance, index) => balance.add(right_child.balances[index]));
         let hash = Poseidon.hash([left_child.hash, right_child.hash, ...netBalances]);
-        return new Node(hash, netBalances);
+        return new MSTNode(hash, netBalances);
     }
 }
