@@ -1,0 +1,7 @@
+[package]
+name = "ORAM-SMST"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mina-curves = { git = "https://github.com/o1-labs/proof-systems", version = "0.1.0" }
