@@ -1,23 +1,25 @@
+use crate::{
+    hasher::Hashables, pedersen::Pedersen, record::Record, secret::Secret, BaseField, CurvePoint,
+    ScalarField,
+};
 use mina_hasher::{create_legacy, Hasher};
 use num_bigint::BigUint;
+mod hidden;
 
-use crate::{
-    hasher::Hashables, pedersen::Pedersen, record::Record, CurvePoint, Hash, ScalarField, Secret,
-};
-
-pub struct LeafNode<const N_CURR: usize> {
+#[derive(Debug)]
+pub struct Node<const N_CURR: usize> {
     liability: BigUint,
     blinding_factor: ScalarField, // scalar
     commitment: CurvePoint,
-    hash: Hash,
+    hash: BaseField,
 }
 
-impl<const N_CURR: usize> LeafNode<N_CURR> {
+impl<const N_CURR: usize> Node<N_CURR> {
     pub fn new(
         liability: BigUint,
         blinding_factor: ScalarField,
         commitment: CurvePoint,
-        hash: Hash,
+        hash: BaseField,
     ) -> Self {
         Self {
             liability,
@@ -51,7 +53,7 @@ impl<const N_CURR: usize> LeafNode<N_CURR> {
             liability: total_liability,
             blinding_factor,
             commitment,
-            hash: hash.into(),
+            hash,
         }
     }
 
@@ -79,12 +81,58 @@ impl<const N_CURR: usize> LeafNode<N_CURR> {
         hasher.update(&Hashables::from_slice("pad".as_bytes()));
         hasher.update(&Hashables::Bytes(cord_bytes));
         hasher.update(&Hashables::Secret(user_salt));
-        let hash: Hash = hasher.digest().into();
+        let hash = hasher.digest();
         Self {
             liability: liability.into(),
             blinding_factor,
             commitment,
             hash,
         }
+    }
+
+    pub fn merge(left_child: &Self, right_child: &Self) -> Self {
+        //TODO: Think of something better to remote this clone
+        let liability = left_child.liability.clone() + right_child.liability.clone();
+        let blinding_factor: ScalarField = left_child.blinding_factor + right_child.blinding_factor;
+        let commitment = (left_child.commitment + right_child.commitment).into();
+
+        // hash = `H(com_l | com_r | hash_l | hash_r)`
+        let mut hasher = create_legacy::<Hashables>(());
+        hasher.update(&Hashables::Commitment(left_child.commitment));
+        hasher.update(&Hashables::Commitment(right_child.commitment));
+        hasher.update(&Hashables::Hash(left_child.hash));
+        hasher.update(&Hashables::Hash(right_child.hash));
+
+        let hash = hasher.digest();
+        Self {
+            liability,
+            blinding_factor,
+            commitment,
+            hash,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use num_bigint::BigUint;
+
+    use crate::{nodes::Node, record::Record, secret::Secret, BaseField};
+
+    #[test]
+    fn node_e2e_works() {
+        const N_CURR: usize = 1;
+        let balances = &[1u64];
+        let record = Record::<N_CURR>::new(balances, BaseField::from(1));
+        let bliding_factor = Secret::from(2u32);
+        let user_salt = Secret::from(1u32);
+        let leaf = Node::new_leaf(bliding_factor.clone(), record, user_salt.clone());
+        let pad = Node::new_pad(bliding_factor, 0, 1, user_salt);
+
+        println!("{:?}", leaf);
+        println!("{:?}", pad);
+
+        let merged = Node::merge(&leaf, &pad);
+        assert_eq!(merged.liability, BigUint::from(1u32));
     }
 }

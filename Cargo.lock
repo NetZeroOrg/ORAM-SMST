@@ -3,20 +3,6 @@
 version = 4
 
 [[package]]
-name = "ORAM-SMST"
-version = "0.1.0"
-dependencies = [
- "ark-ec 0.5.0",
- "ark-ff 0.5.0",
- "ark-std 0.5.0",
- "mina-curves",
- "mina-hasher",
- "num-bigint",
- "o1-utils",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "ahash"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -797,6 +783,21 @@ name = "once_cell"
 version = "1.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
+
+[[package]]
+name = "oram_smst"
+version = "0.1.0"
+dependencies = [
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
+ "ark-serialize 0.4.2",
+ "ark-std 0.5.0",
+ "mina-curves",
+ "mina-hasher",
+ "num-bigint",
+ "o1-utils",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "paste"

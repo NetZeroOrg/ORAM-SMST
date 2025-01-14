@@ -22,4 +22,11 @@ impl<const N_CURR: usize> Record<N_CURR> {
     pub fn to_hashable(&self) -> Hashables {
         Hashables::UserId(self.hashed_email)
     }
+
+    pub fn new(balances: &[u64; N_CURR], hashed_email: Fp) -> Self {
+        Self {
+            balances: *balances,
+            hashed_email,
+        }
+    }
 }
