@@ -1,4 +1,9 @@
-use crate::{hasher::Hashables, pedersen::Pedersen, BaseField, CurvePoint};
+use crate::{
+    hasher::Hashables,
+    node_position::{self, NodePosition},
+    pedersen::Pedersen,
+    BaseField, CurvePoint,
+};
 use mina_hasher::{create_legacy, Hasher};
 
 use super::TreeNode;
@@ -37,20 +42,17 @@ impl TreeNode for PartialNode {
 
     fn new_pad(
         blinding_factor: crate::secret::Secret,
-        height: u8,
-        level_offset: u64,
+        position: NodePosition,
         user_salt: crate::secret::Secret,
     ) -> Self {
         let commitment = Pedersen::default().commit(0.into(), blinding_factor.to_field());
 
-        // compute the hash H("pad" | cordinate | salt)
-        let mut cord_bytes = vec![height];
-        cord_bytes.extend_from_slice(&level_offset.to_le_bytes());
-
         let mut hasher = create_legacy::<Hashables>(());
+
         hasher.update(&Hashables::from_slice("pad".as_bytes()));
-        hasher.update(&Hashables::Bytes(cord_bytes));
+        hasher.update(&Hashables::Position(position));
         hasher.update(&Hashables::Secret(user_salt));
+
         Self {
             hash: hasher.digest(),
             commitment,

@@ -1,4 +1,4 @@
-use crate::{secret::Secret, BaseField, CurvePoint};
+use crate::{node_position::NodePosition, secret::Secret, BaseField, CurvePoint};
 use ark_serialize::CanonicalSerialize;
 use mina_hasher::{Hashable, ROInput};
 
@@ -9,6 +9,7 @@ pub enum Hashables {
     UserId(BaseField),
     Commitment(CurvePoint),
     Hash(BaseField),
+    Position(NodePosition),
 }
 
 impl Hashables {
@@ -34,6 +35,11 @@ impl Hashable for Hashables {
                 ROInput::new().append_bytes(&compressed_bytes)
             }
             Self::Hash(h) => ROInput::new().append_field(*h),
+            Self::Position(node_pos) => {
+                let mut bytes = node_pos.0.to_le_bytes().to_vec();
+                bytes.push(node_pos.1);
+                ROInput::new().append_bytes(&bytes)
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::{record::Record, secret::Secret};
+use crate::{node_position::NodePosition, record::Record, secret::Secret};
 
 pub mod node;
 pub mod partial;
@@ -12,7 +12,7 @@ pub trait TreeNode {
         user_salt: Secret,
     ) -> Self;
 
-    fn new_pad(blinding_factor: Secret, hieght: u8, level_offset: u64, user_salt: Secret) -> Self;
+    fn new_pad(blinding_factor: Secret, position: NodePosition, user_salt: Secret) -> Self;
 
     fn merge(left_child: &Self, right_child: &Self) -> Self;
 }
