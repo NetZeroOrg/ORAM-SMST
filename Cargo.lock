@@ -796,6 +796,9 @@ dependencies = [
  "mina-hasher",
  "num-bigint",
  "o1-utils",
+ "serde",
+ "serde_json",
+ "serde_with",
  "thiserror 2.0.11",
  "wasm-bindgen",
 ]

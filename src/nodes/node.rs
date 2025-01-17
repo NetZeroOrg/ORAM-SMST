@@ -5,13 +5,20 @@ use crate::{
 };
 use mina_hasher::{create_legacy, Hasher};
 use num_bigint::BigUint;
-
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 /// A Node for the SMT
-#[derive(Debug)]
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Node {
     liability: BigUint,
+    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
     blinding_factor: ScalarField, // scalar
+
+    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
     commitment: CurvePoint,
+
+    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
     hash: BaseField,
 }
 
