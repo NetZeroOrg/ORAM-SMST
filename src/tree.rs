@@ -1,4 +1,5 @@
 use crate::{
+    node_position::Height,
     nodes::{node::Node, TreeNode},
     store::Store,
 };
@@ -6,7 +7,7 @@ use crate::{
 pub struct SMT<T: TreeNode + Clone> {
     root: Node,
     store: Store<T>,
-    height: u8,
+    height: Height,
 }
 
 impl<T: TreeNode + Clone> SMT<T> {}

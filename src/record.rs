@@ -1,14 +1,13 @@
-use mina_curves::pasta::Fp;
 use num_bigint::BigUint;
 
-use crate::hasher::Hashables;
+use crate::{hasher::Hashables, BaseField};
 
 // contains the record from databse of the CEX
 // balances are the liability of the CEX
 // hashed email acts as Id
 pub struct Record<const N_CURR: usize> {
     balances: [u64; N_CURR],
-    hashed_email: Fp,
+    hashed_email: BaseField,
 }
 
 impl<const N_CURR: usize> Record<N_CURR> {
@@ -23,7 +22,7 @@ impl<const N_CURR: usize> Record<N_CURR> {
         Hashables::UserId(self.hashed_email)
     }
 
-    pub fn new(balances: &[u64; N_CURR], hashed_email: Fp) -> Self {
+    pub fn new(balances: &[u64; N_CURR], hashed_email: BaseField) -> Self {
         Self {
             balances: *balances,
             hashed_email,
