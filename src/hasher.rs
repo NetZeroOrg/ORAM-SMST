@@ -37,7 +37,7 @@ impl Hashable for Hashables {
             Self::Hash(h) => ROInput::new().append_field(*h),
             Self::Position(node_pos) => {
                 let mut bytes = node_pos.0.to_le_bytes().to_vec();
-                bytes.push(node_pos.1);
+                bytes.push(node_pos.1.as_u8());
                 ROInput::new().append_bytes(&bytes)
             }
         }
