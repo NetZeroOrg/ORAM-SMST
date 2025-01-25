@@ -123,7 +123,7 @@ mod tests {
     use num_bigint::BigUint;
 
     use crate::{
-        node_position::NodePosition,
+        node_position::{Height, NodePosition},
         nodes::{node::Node, TreeNode},
         record::Record,
         secret::Secret,
@@ -138,7 +138,11 @@ mod tests {
         let bliding_factor = Secret::from(2u32);
         let user_salt = Secret::from(1u32);
         let leaf = Node::new_leaf(bliding_factor.clone(), record, user_salt.clone());
-        let pad = Node::new_pad(bliding_factor, NodePosition::new(1, 1), user_salt);
+        let pad = Node::new_pad(
+            bliding_factor,
+            NodePosition::new(1, Height::new(1)),
+            user_salt,
+        );
         let merged = Node::merge(&leaf, &pad);
         assert_eq!(merged.liability, BigUint::from(1u32));
     }

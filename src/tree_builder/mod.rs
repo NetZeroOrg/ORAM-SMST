@@ -82,8 +82,8 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
     store_depth: u8,
     blinding_factor: Secret,
     user_salt: Secret,
-) -> Result<(NodeMap<T>, Node)> {
-    let node_map = HashMap::new();
+) -> Result<(NodeMap<T>, T)> {
+    let mut node_map = HashMap::new();
     let max_leafs = height.max_nodes();
     if leaf_nodes.len() > max_leafs as usize {
         return Err(error::Error::TooManyLeafNodesForHeight {
@@ -93,14 +93,16 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
     }
 
     let mut nodes = leaf_nodes;
-    for y in 0..height.as_u8() {
-        let height = Height::new(y);
+    for y in (0..height.as_u8()).rev() {
         let mut pairs = vec![];
-        for (node_pos, node) in nodes {
+        for (node_pos, node) in nodes.iter() {
+            if y == 0 {
+                node_map.insert(*node_pos, node.clone());
+            }
             match node_pos.direction() {
                 Direction::Left => {
                     pairs.push(Pair {
-                        left: Some((node_pos, node)),
+                        left: Some((*node_pos, node.clone())),
                         right: None,
                     });
                 }
@@ -114,30 +116,30 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
                                 false
                             };
                             if is_sibling {
-                                pair.right = Some((node_pos, node));
+                                pair.right = Some((*node_pos, node.clone()));
                             } else {
                                 pairs.push(Pair {
                                     left: None,
-                                    right: Some((node_pos, node)),
+                                    right: Some((*node_pos, node.clone())),
                                 })
                             }
                         }
                         // there was no node in pair
                         None => pairs.push(Pair {
                             left: None,
-                            right: Some((node_pos, node)),
+                            right: Some((*node_pos, node.clone())),
                         }),
                     }
                 }
             }
             // pad nodes and put nodes = merge
-            pairs
-                .iter_mut()
-                .for_each(|pair| pair.pad_if_not_match(blinding_factor, user_salt).unwrap());
-
-            nodes = pairs.iter().map(|pair| pair.merge().unwrap()).collect();
+            pairs.iter_mut().for_each(|pair| {
+                pair.pad_if_not_match(blinding_factor.clone(), user_salt.clone())
+                    .unwrap()
+            });
         }
+        nodes = pairs.iter().map(|pair| pair.merge().unwrap()).collect();
     }
     let (_, root_node) = nodes.pop().unwrap();
-    (node_map, root_node)
+    Ok((node_map, root_node))
 }
