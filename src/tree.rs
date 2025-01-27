@@ -1,6 +1,8 @@
 use crate::{
     node_position::Height,
     nodes::{node::Node, TreeNode},
+    salt::Salt,
+    secret::Secret,
     store::Store,
 };
 
@@ -10,4 +12,9 @@ pub struct SMT<T: TreeNode + Clone> {
     height: Height,
 }
 
-impl<T: TreeNode + Clone> SMT<T> {}
+pub struct Tree<T: TreeNode + Clone> {
+    inner: SMT<T>,
+    master_secret: Secret,
+    salt_s: Salt,
+    salt_b: Salt,
+}

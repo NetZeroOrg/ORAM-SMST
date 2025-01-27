@@ -1,4 +1,6 @@
-use crate::ScalarField;
+use std::str::FromStr;
+
+use crate::{error::ErrorKind, ScalarField};
 use num_bigint::BigUint;
 use o1_utils::FieldHelpers;
 
@@ -26,5 +28,21 @@ impl From<u32> for Secret {
         let mut secret = vec![0; 28];
         secret.extend_from_slice(&u32_bytes);
         Secret(secret.try_into().unwrap())
+    }
+}
+
+impl FromStr for Secret {
+    type Err = ErrorKind;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() > 32 {
+            Err(ErrorKind::StringTooLong {
+                given: s.len(),
+                max: 32,
+            })
+        } else {
+            let mut arr = [0u8; 32];
+            arr[..s.len()].copy_from_slice(s.as_bytes());
+            Ok(Secret(arr))
+        }
     }
 }

@@ -1,5 +1,5 @@
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum ErrorKind {
     #[error("Too many records provided for the given height (given: {given:?}, max: {max:?})")]
     TooManyLeafNodesForHeight { given: u64, max: u64 },
 
@@ -11,6 +11,9 @@ pub enum Error {
 
     #[error("Found unmatched nodes when merging")]
     FoundUnmatchedNodes,
+
+    #[error("Cannot parse salt due to long string (given: {given:?}, max: {max:?})")]
+    StringTooLong { given: usize, max: usize },
 }
 
-pub(crate) type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, ErrorKind>;

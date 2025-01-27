@@ -35,7 +35,7 @@ where
     pub fn insert(&mut self, node: T, position: NodePosition) -> Result<()> {
         self.map
             .insert(position, node)
-            .ok_or::<crate::error::Error>(Error::CannotInsertInStore)?;
+            .ok_or::<crate::error::ErrorKind>(Error::CannotInsertInStore)?;
         Ok(())
     }
 }

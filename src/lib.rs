@@ -6,6 +6,7 @@ pub mod nodes;
 pub mod path_oram;
 pub mod pedersen;
 pub mod record;
+pub mod salt;
 pub mod secret;
 pub mod store;
 pub mod tree;

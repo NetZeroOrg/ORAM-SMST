@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
-use serde_json::map;
-
 use crate::{
-    error::{self, Error, Result},
+    error::{ErrorKind, Result},
     node_position::{Direction, Height, NodePosition},
-    nodes::{node::Node, TreeNode},
+    nodes::TreeNode,
     record::Record,
     secret::Secret,
-    store::{NodeMap, Store},
+    store::NodeMap,
+    tree::SMT,
 };
 mod multi;
 mod single;
@@ -44,7 +43,7 @@ impl<T: TreeNode> Pair<T> {
                     let pos = right_pos.get_sibling_pos();
                     self.right = Some((pos, T::new_pad(blinding_factor, pos, user_salt)))
                 }
-                None => return Err(Error::BothNodesEmpty),
+                None => return Err(ErrorKind::BothNodesEmpty),
             },
         }
         Ok(())
@@ -57,7 +56,7 @@ impl<T: TreeNode> Pair<T> {
                 let parent = T::merge(left, right);
                 Ok((parent_pos, parent))
             }
-            _ => return Err(Error::FoundUnmatchedNodes),
+            _ => return Err(ErrorKind::FoundUnmatchedNodes),
         }
     }
 }
@@ -86,7 +85,7 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
     let mut node_map = HashMap::new();
     let max_leafs = height.max_nodes();
     if leaf_nodes.len() > max_leafs as usize {
-        return Err(error::Error::TooManyLeafNodesForHeight {
+        return Err(ErrorKind::ErrorKind::TooManyLeafNodesForHeight {
             given: leaf_nodes.len() as u64,
             max: max_leafs,
         });
@@ -96,7 +95,7 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
     for y in (0..height.as_u8()).rev() {
         let mut pairs = vec![];
         for (node_pos, node) in nodes.iter() {
-            if y == 0 {
+            if y <= store_depth {
                 node_map.insert(*node_pos, node.clone());
             }
             match node_pos.direction() {
@@ -142,4 +141,8 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
     }
     let (_, root_node) = nodes.pop().unwrap();
     Ok((node_map, root_node))
+}
+
+impl<const N_CURR: usize> SMTreeBuilder<N_CURR> {
+    pub fn build<T: TreeNode + Clone>(&self) -> SMT<T> {}
 }
