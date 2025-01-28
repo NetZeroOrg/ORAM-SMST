@@ -18,6 +18,13 @@ impl Salt {
         let random_str = Alphanumeric.sample_string(&mut rng, 32);
         Self::from_str(&random_str).unwrap()
     }
+
+    pub fn as_hex(&self) -> String {
+        self.0
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>()
+    }
 }
 
 impl FromStr for Salt {

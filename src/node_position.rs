@@ -8,7 +8,7 @@ impl Height {
         Self(y)
     }
 
-    /// returns maximum number of nodes at this level
+    /// returns maximum number of nodes at this level 2^(heght) as height starts from zero
     pub fn max_nodes(&self) -> u64 {
         1u64 << self.0
     }
@@ -23,6 +23,10 @@ impl Height {
     }
     pub fn get_parent_height(&self) -> Self {
         Height::new(self.0 - 1)
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        self.0 as u32
     }
 }
 
@@ -67,4 +71,20 @@ impl NodePosition {
             Direction::Right => NodePosition::new(self.0 - 1, self.1),
         }
     }
+
+    /// get nodes as byte
+    /// 1 + 8 = 9 bytes
+    pub fn to_bytes(&self) -> [u8; 9] {
+        let mut byts = [0u8; 9];
+        byts[0] = self.1.as_u8();
+        byts[1..].copy_from_slice(&self.0.to_le_bytes());
+        byts
+    }
+}
+
+#[test]
+fn test_as_bytes() {
+    let pos = NodePosition::new(10, Height::new(8));
+    let should_be = [8, 10, 0, 0, 0, 0, 0, 0, 0];
+    assert_eq!(pos.to_bytes(), should_be);
 }

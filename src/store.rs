@@ -2,17 +2,13 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    error::{Error, Result},
-    node_position::NodePosition,
-    nodes::TreeNode,
-};
+use crate::{error::Result, node_position::NodePosition, nodes::TreeNode};
 
 pub(crate) type NodeMap<T: TreeNode + Clone> = HashMap<NodePosition, T>;
 
 #[derive(Serialize, Deserialize)]
 pub struct Store<T: TreeNode + Clone> {
-    map: NodeMap<T>,
+    pub map: NodeMap<T>,
 }
 
 impl<T> Store<T>
@@ -35,7 +31,7 @@ where
     pub fn insert(&mut self, node: T, position: NodePosition) -> Result<()> {
         self.map
             .insert(position, node)
-            .ok_or::<crate::error::ErrorKind>(Error::CannotInsertInStore)?;
+            .ok_or::<crate::error::ErrorKind>(crate::error::ErrorKind::CannotInsertInStore)?;
         Ok(())
     }
 }

@@ -14,6 +14,9 @@ pub enum ErrorKind {
 
     #[error("Cannot parse salt due to long string (given: {given:?}, max: {max:?})")]
     StringTooLong { given: usize, max: usize },
+
+    #[error("Maximum number of nodes is {0} which is reached")]
+    MaxNumNodesReached(u64),
 }
 
 pub(crate) type Result<T> = std::result::Result<T, ErrorKind>;

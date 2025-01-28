@@ -1,7 +1,7 @@
 use super::{partial::PartialNode, TreeNode};
 use crate::{
     hasher::Hashables, node_position::NodePosition, pedersen::Pedersen, record::Record,
-    secret::Secret, BaseField, CurvePoint, ScalarField,
+    secret::Secret, tree_builder::PaddingNodeContent, BaseField, CurvePoint, ScalarField,
 };
 use mina_hasher::{create_legacy, Hasher};
 use num_bigint::BigUint;
@@ -48,8 +48,8 @@ impl TreeNode for Node {
     /// hash secret is calculate as `KDF(wu,salt_s)` where wu = `KDF(master_secret , id_u)`
     fn new_leaf<const N_CURR: usize>(
         blinding_factor_secret: Secret,
-        record: Record<N_CURR>,
-        user_salt: Secret,
+        record: &Record<N_CURR>,
+        user_secret: Secret,
     ) -> Self {
         let blinding_factor = blinding_factor_secret.to_field();
         let total_liability = record.total_liability();
@@ -61,7 +61,7 @@ impl TreeNode for Node {
         let mut hasher = create_legacy::<Hashables>(());
         hasher.update(&Hashables::from_slice("leaf".as_bytes()));
         hasher.update(&record.to_hashable());
-        hasher.update(&Hashables::Secret(user_salt));
+        hasher.update(&Hashables::Secret(user_secret));
         let hash = hasher.digest();
         Self {
             liability: total_liability,
@@ -75,17 +75,17 @@ impl TreeNode for Node {
     /// level is the height at which the pad is required
     /// level_offset is the offset from the left to the point we are inserting the node assuming that
     /// max height of the tree is 64 which is more than enough for our use case
-    fn new_pad(blinding_factor_secret: Secret, position: NodePosition, user_salt: Secret) -> Self {
+    fn new_pad(padding_node_content: PaddingNodeContent, position: NodePosition) -> Self {
         let liability = 0u64;
 
-        let blinding_factor = blinding_factor_secret.to_field();
+        let blinding_factor = padding_node_content.bliding_factor().to_field();
 
         let commitment = Pedersen::default().commit(liability.into(), blinding_factor);
 
         let mut hasher = create_legacy::<Hashables>(());
         hasher.update(&Hashables::from_slice("pad".as_bytes()));
         hasher.update(&Hashables::Position(position));
-        hasher.update(&Hashables::Secret(user_salt));
+        hasher.update(&Hashables::Secret(padding_node_content.user_secret()));
         let hash = hasher.digest();
         Self {
             liability: liability.into(),
@@ -127,6 +127,7 @@ mod tests {
         nodes::{node::Node, TreeNode},
         record::Record,
         secret::Secret,
+        tree_builder::PaddingNodeContent,
         BaseField,
     };
 
@@ -135,14 +136,11 @@ mod tests {
         const N_CURR: usize = 1;
         let balances = &[1u64];
         let record = Record::<N_CURR>::new(balances, BaseField::from(1));
-        let bliding_factor = Secret::from(2u32);
-        let user_salt = Secret::from(1u32);
-        let leaf = Node::new_leaf(bliding_factor.clone(), record, user_salt.clone());
-        let pad = Node::new_pad(
-            bliding_factor,
-            NodePosition::new(1, Height::new(1)),
-            user_salt,
-        );
+        let blinding_factor = Secret::from(2u32);
+        let user_secret = Secret::from(1u32);
+        let leaf = Node::new_leaf(blinding_factor.clone(), &record, user_secret.clone());
+        let pad_content = PaddingNodeContent::new(blinding_factor, user_secret);
+        let pad = Node::new_pad(pad_content, NodePosition::new(1, Height::new(1)));
         let merged = Node::merge(&leaf, &pad);
         assert_eq!(merged.liability, BigUint::from(1u32));
     }

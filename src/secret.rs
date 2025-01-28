@@ -31,6 +31,12 @@ impl From<u32> for Secret {
     }
 }
 
+impl From<[u8; 32]> for Secret {
+    fn from(value: [u8; 32]) -> Self {
+        Secret(value)
+    }
+}
+
 impl FromStr for Secret {
     type Err = ErrorKind;
     fn from_str(s: &str) -> Result<Self, Self::Err> {

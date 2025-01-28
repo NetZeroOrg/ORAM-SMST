@@ -6,7 +6,6 @@ use crate::{
     nodes::TreeNode,
     record::Record,
     secret::Secret,
-    store::NodeMap,
     tree::SMT,
 };
 mod multi;
@@ -29,19 +28,24 @@ impl<T: TreeNode> Pair<T> {
         self.left.is_some() && self.right.is_some()
     }
 
-    pub fn pad_if_not_match(&mut self, blinding_factor: Secret, user_salt: Secret) -> Result<()> {
+    pub fn pad_if_not_match<F: Fn(&NodePosition) -> PaddingNodeContent>(
+        &mut self,
+        padding_node_content: &F,
+    ) -> Result<()> {
         match self.left {
             Some((left_pos, _)) => match self.right {
                 Some(_) => (),
                 None => {
                     let pos = left_pos.get_sibling_pos();
-                    self.right = Some((pos, T::new_pad(blinding_factor, pos, user_salt)))
+                    let content = padding_node_content(&pos);
+                    self.right = Some((pos, T::new_pad(content, pos)))
                 }
             },
             None => match self.right {
                 Some((right_pos, _)) => {
                     let pos = right_pos.get_sibling_pos();
-                    self.right = Some((pos, T::new_pad(blinding_factor, pos, user_salt)))
+                    let content = padding_node_content(&pos);
+                    self.right = Some((pos, T::new_pad(content, pos)))
                 }
                 None => return Err(ErrorKind::BothNodesEmpty),
             },
@@ -72,20 +76,38 @@ impl<const N_CURR: usize> SMTreeBuilder<N_CURR> {
     }
 }
 
+/// Padding node content
+/// 1 - blinding factor
+/// 2 - user secret
+#[derive(Clone)]
+pub struct PaddingNodeContent(Secret, Secret);
+
+impl PaddingNodeContent {
+    pub fn bliding_factor(&self) -> Secret {
+        self.0.clone()
+    }
+    pub fn user_secret(&self) -> Secret {
+        self.1.clone()
+    }
+
+    pub fn new(blinding_factor: Secret, user_secret: Secret) -> Self {
+        PaddingNodeContent(blinding_factor, user_secret)
+    }
+}
+
 /// builds the whole tree from nodes and returns the root node
 /// store depth indicates the number of nodes to store in the hashmap
 /// this will be relative to the machine specification
-pub fn build_from_nodes<T: TreeNode + Clone>(
+pub fn build_tree<T: TreeNode + Clone, F: Fn(&NodePosition) -> PaddingNodeContent>(
     leaf_nodes: Vec<(NodePosition, T)>,
     height: &Height,
     store_depth: u8,
-    blinding_factor: Secret,
-    user_salt: Secret,
-) -> Result<(NodeMap<T>, T)> {
+    padding_node_content: &F,
+) -> Result<SMT<T>> {
     let mut node_map = HashMap::new();
     let max_leafs = height.max_nodes();
     if leaf_nodes.len() > max_leafs as usize {
-        return Err(ErrorKind::ErrorKind::TooManyLeafNodesForHeight {
+        return Err(ErrorKind::TooManyLeafNodesForHeight {
             given: leaf_nodes.len() as u64,
             max: max_leafs,
         });
@@ -132,17 +154,16 @@ pub fn build_from_nodes<T: TreeNode + Clone>(
                 }
             }
             // pad nodes and put nodes = merge
-            pairs.iter_mut().for_each(|pair| {
-                pair.pad_if_not_match(blinding_factor.clone(), user_salt.clone())
-                    .unwrap()
-            });
+            pairs
+                .iter_mut()
+                .for_each(|pair| pair.pad_if_not_match(padding_node_content).unwrap());
         }
         nodes = pairs.iter().map(|pair| pair.merge().unwrap()).collect();
     }
-    let (_, root_node) = nodes.pop().unwrap();
-    Ok((node_map, root_node))
-}
 
-impl<const N_CURR: usize> SMTreeBuilder<N_CURR> {
-    pub fn build<T: TreeNode + Clone>(&self) -> SMT<T> {}
+    Ok(SMT {
+        root: nodes.pop().unwrap().1,
+        store: crate::store::Store { map: node_map },
+        height: *height,
+    })
 }

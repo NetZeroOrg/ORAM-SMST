@@ -9,9 +9,9 @@ pub mod record;
 pub mod salt;
 pub mod secret;
 pub mod store;
+pub mod tier_ratios;
 pub mod tree;
 pub mod tree_builder;
-
 pub(crate) type ScalarField = mina_curves::pasta::Fq;
 pub(crate) type BaseField = mina_curves::pasta::Fp;
 pub(crate) type CurvePoint = mina_curves::pasta::Pallas;

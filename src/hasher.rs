@@ -10,6 +10,7 @@ pub enum Hashables {
     Commitment(CurvePoint),
     Hash(BaseField),
     Position(NodePosition),
+    Id(String),
 }
 
 impl Hashables {
@@ -40,6 +41,7 @@ impl Hashable for Hashables {
                 bytes.push(node_pos.1.as_u8());
                 ROInput::new().append_bytes(&bytes)
             }
+            Self::Id(s) => ROInput::new().append_bytes(s.as_bytes()),
         }
     }
 

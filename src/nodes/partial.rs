@@ -2,6 +2,7 @@ use crate::{
     hasher::Hashables,
     node_position::{self, NodePosition},
     pedersen::Pedersen,
+    tree_builder::PaddingNodeContent,
     BaseField, CurvePoint,
 };
 use mina_hasher::{create_legacy, Hasher};
@@ -23,7 +24,7 @@ impl PartialNode {
 impl TreeNode for PartialNode {
     fn new_leaf<const N_CURR: usize>(
         blinding_factor: crate::secret::Secret,
-        record: crate::record::Record<N_CURR>,
+        record: &crate::record::Record<N_CURR>,
         user_salt: crate::secret::Secret,
     ) -> Self {
         let total_lia = record.total_liability();
@@ -40,18 +41,14 @@ impl TreeNode for PartialNode {
         }
     }
 
-    fn new_pad(
-        blinding_factor: crate::secret::Secret,
-        position: NodePosition,
-        user_salt: crate::secret::Secret,
-    ) -> Self {
-        let commitment = Pedersen::default().commit(0.into(), blinding_factor.to_field());
+    fn new_pad(padding: PaddingNodeContent, position: NodePosition) -> Self {
+        let commitment = Pedersen::default().commit(0.into(), padding.bliding_factor().to_field());
 
         let mut hasher = create_legacy::<Hashables>(());
 
         hasher.update(&Hashables::from_slice("pad".as_bytes()));
         hasher.update(&Hashables::Position(position));
-        hasher.update(&Hashables::Secret(user_salt));
+        hasher.update(&Hashables::Secret(padding.user_secret()));
 
         Self {
             hash: hasher.digest(),
