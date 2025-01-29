@@ -3,6 +3,7 @@ use std::str::FromStr;
 use crate::{error::ErrorKind, ScalarField};
 use num_bigint::BigUint;
 use o1_utils::FieldHelpers;
+use rand::Rng;
 
 /// A 256-bit packet for the pedersen commitment
 #[derive(Clone, Debug)]
@@ -18,7 +19,8 @@ impl Secret {
     }
 
     pub fn to_field(&self) -> ScalarField {
-        ScalarField::from_bytes(&self.0).unwrap()
+        let biguint = BigUint::from_bytes_be(&self.0);
+        ScalarField::from(biguint)
     }
 }
 
@@ -51,4 +53,8 @@ impl FromStr for Secret {
             Ok(Secret(arr))
         }
     }
+}
+
+pub fn random_secret() -> Secret {
+    return Secret::from(rand::rng().random::<u32>());
 }

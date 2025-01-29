@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use serde::{Deserialize, Serialize};
 
@@ -6,14 +6,14 @@ use crate::{error::Result, node_position::NodePosition, nodes::TreeNode};
 
 pub(crate) type NodeMap<T: TreeNode + Clone> = HashMap<NodePosition, T>;
 
-#[derive(Serialize, Deserialize)]
-pub struct Store<T: TreeNode + Clone> {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Store<T: TreeNode + Clone + Debug> {
     pub map: NodeMap<T>,
 }
 
 impl<T> Store<T>
 where
-    T: TreeNode + Clone,
+    T: TreeNode + Clone + Debug,
 {
     pub fn new() -> Self {
         Self {

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use crate::{
     error::{ErrorKind, Result},
@@ -11,12 +11,13 @@ use crate::{
 mod multi;
 mod single;
 
-pub struct Pair<T: TreeNode> {
+#[derive(Debug)]
+pub struct Pair<T: TreeNode + Debug> {
     left: Option<(NodePosition, T)>,
     right: Option<(NodePosition, T)>,
 }
 
-impl<T: TreeNode> Pair<T> {
+impl<T: TreeNode + Debug> Pair<T> {
     pub fn new(left: Option<(NodePosition, T)>, right: Option<(NodePosition, T)>) -> Self {
         if left.is_none() && right.is_none() {
             panic!("Both node empty in pair")
@@ -45,7 +46,7 @@ impl<T: TreeNode> Pair<T> {
                 Some((right_pos, _)) => {
                     let pos = right_pos.get_sibling_pos();
                     let content = padding_node_content(&pos);
-                    self.right = Some((pos, T::new_pad(content, pos)))
+                    self.left = Some((pos, T::new_pad(content, pos)))
                 }
                 None => return Err(ErrorKind::BothNodesEmpty),
             },
@@ -62,17 +63,6 @@ impl<T: TreeNode> Pair<T> {
             }
             _ => return Err(ErrorKind::FoundUnmatchedNodes),
         }
-    }
-}
-
-pub struct SMTreeBuilder<const N_CURR: usize> {
-    records: Vec<Record<N_CURR>>,
-    height: Option<u8>,
-}
-
-impl<const N_CURR: usize> SMTreeBuilder<N_CURR> {
-    pub fn new(records: Vec<Record<N_CURR>>, height: Option<u8>) -> Self {
-        Self { records, height }
     }
 }
 
@@ -98,7 +88,7 @@ impl PaddingNodeContent {
 /// builds the whole tree from nodes and returns the root node
 /// store depth indicates the number of nodes to store in the hashmap
 /// this will be relative to the machine specification
-pub fn build_tree<T: TreeNode + Clone, F: Fn(&NodePosition) -> PaddingNodeContent>(
+pub fn build_tree<T: TreeNode + Clone + Debug, F: Fn(&NodePosition) -> PaddingNodeContent>(
     leaf_nodes: Vec<(NodePosition, T)>,
     height: &Height,
     store_depth: u8,

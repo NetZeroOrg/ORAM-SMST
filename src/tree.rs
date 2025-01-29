@@ -1,26 +1,28 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{collections::HashMap, fmt::Debug, marker::PhantomData};
 
 use crate::{
     error::Result,
     kdf,
     node_position::{Height, NodePosition},
-    nodes::{node::Node, TreeNode},
-    record::Record,
+    nodes::{node::Node, partial::PartialNode, TreeNode},
+    record::{random_records, Record},
     salt::Salt,
-    secret::Secret,
+    secret::{random_secret, Secret},
     store::Store,
-    tree_builder::PaddingNodeContent,
+    tree_builder::{self, PaddingNodeContent},
 };
 use log::info;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
-pub struct SMT<T: TreeNode + Clone> {
+
+#[derive(Debug)]
+pub struct SMT<T: TreeNode + Clone + Debug> {
     pub root: T,
     pub store: Store<T>,
     pub height: Height,
 }
 /// The tree paramets such as `master_salt` , `salt_s` , `salt_b`
 pub struct TreeParams {
-    master_salt: Secret,
+    master_secret: Secret,
     pub salt_s: Salt,
     pub salt_b: Salt,
 }
@@ -34,7 +36,7 @@ pub struct TreeBuilder<T: TreeNode + Clone, const N_CURR: usize> {
     _marker: PhantomData<T>,
 }
 
-impl<T: TreeNode + Clone, const N_CURR: usize> TreeBuilder<T, N_CURR> {
+impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
     pub fn new(records: Vec<Record<N_CURR>>, height: Height, tree_params: TreeParams) -> Self {
         Self {
             records,
@@ -71,7 +73,7 @@ impl<T: TreeNode + Clone, const N_CURR: usize> TreeBuilder<T, N_CURR> {
             let master_secret = kdf::kdf(
                 None,
                 Some(&new_x_cord.to_le_bytes()),
-                self.tree_params.master_salt.as_bytes_slice(),
+                self.tree_params.master_secret.as_bytes_slice(),
             );
             // `b` in dapol +
             let blinding_factor = kdf::kdf(
@@ -90,7 +92,7 @@ impl<T: TreeNode + Clone, const N_CURR: usize> TreeBuilder<T, N_CURR> {
         }
         let padding_fn = |pos: &NodePosition| {
             new_padding_node_content(
-                &self.tree_params.master_salt.as_bytes_slice(),
+                &self.tree_params.master_secret.as_bytes_slice(),
                 &self.tree_params.salt_s.as_bytes(),
                 &self.tree_params.salt_b.as_bytes(),
                 pos,
@@ -154,4 +156,21 @@ impl XCordGenerator {
         self.i += 1;
         Ok(x)
     }
+}
+
+#[test]
+pub fn test_tree_e2e() {
+    let rand_records = random_records::<3>(4);
+    let master_secret = random_secret();
+    let salt_s = Salt::generate_random();
+    let salt_b = Salt::generate_random();
+    let tree_params = TreeParams {
+        salt_b,
+        salt_s,
+        master_secret,
+    };
+    let mut tree_builder: TreeBuilder<PartialNode, 3> =
+        TreeBuilder::new(rand_records, Height::new(2), tree_params);
+    let tree = tree_builder.build_single_threaded(Some(0)).unwrap();
+    println!("{:?}", tree); // prints the smt
 }
