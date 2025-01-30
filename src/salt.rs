@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use crate::error::ErrorKind;
 
+#[derive(Clone)]
 pub struct Salt([u8; 32]);
 
 impl Salt {

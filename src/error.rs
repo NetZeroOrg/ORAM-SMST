@@ -1,3 +1,5 @@
+use crate::node_position::NodePosition;
+
 #[derive(thiserror::Error, Debug)]
 pub enum ErrorKind {
     #[error("Too many records provided for the given height (given: {given:?}, max: {max:?})")]
@@ -17,6 +19,9 @@ pub enum ErrorKind {
 
     #[error("Maximum number of nodes is {0} which is reached")]
     MaxNumNodesReached(u64),
+
+    #[error("Cannot find the node at {0} for which path is required")]
+    CannotFindLeafNode(NodePosition),
 }
 
 pub(crate) type Result<T> = std::result::Result<T, ErrorKind>;

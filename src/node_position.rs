@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use serde_with::NoneAsEmptyString;
+
+use crate::nodes::node::Node;
 #[derive(PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Hash, Debug)]
 pub struct Height(u8);
 
@@ -22,11 +23,15 @@ impl Height {
         self.0
     }
     pub fn get_parent_height(&self) -> Self {
-        Height::new(self.0 - 1)
+        Height::new(self.0 + 1)
     }
 
     pub fn as_u32(&self) -> u32 {
         self.0 as u32
+    }
+
+    pub fn as_u64(&self) -> u64 {
+        self.0 as u64
     }
 }
 
@@ -37,12 +42,18 @@ pub enum Direction {
 
 /// A node position in the tree is (x, y) pair
 /// where x = 0 is the leftmost position and y = 0 is the root
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Serialize, Deserialize)]
 pub struct NodePosition(pub u64, pub Height);
 
 impl std::fmt::Display for NodePosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "x:{} y:{}", self.0, self.1.as_u8())
+    }
+}
+
+impl std::fmt::Debug for NodePosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "x: {} y: {}", self.0, self.1.as_u8())
     }
 }
 

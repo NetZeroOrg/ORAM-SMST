@@ -8,6 +8,7 @@ use crate::{
     record::{random_records, Record},
     salt::Salt,
     secret::{random_secret, Secret},
+    siblings::Siblings,
     store::Store,
     tree_builder::{self, PaddingNodeContent},
 };
@@ -21,13 +22,14 @@ pub struct SMT<T: TreeNode + Clone + Debug> {
     pub height: Height,
 }
 /// The tree paramets such as `master_salt` , `salt_s` , `salt_b`
+#[derive(Clone)]
 pub struct TreeParams {
     master_secret: Secret,
     pub salt_s: Salt,
     pub salt_b: Salt,
 }
 
-pub struct TreeBuilder<T: TreeNode + Clone, const N_CURR: usize> {
+pub struct TreeBuilder<T: TreeNode + Clone + Debug, const N_CURR: usize> {
     records: Vec<Record<N_CURR>>,
     /// The position of leaf node in the vector to the hashmap
     x_cord_generator: XCordGenerator,
@@ -68,8 +70,7 @@ impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
 
         for i in 0..self.records.len() {
             let new_x_cord = self.x_cord_generator.gen_x_cord()?;
-            let node_pos = NodePosition::new(new_x_cord, self.height);
-            // `w` in dapol +
+            let node_pos = NodePosition::new(new_x_cord, Height::new(0));
             let master_secret = kdf::kdf(
                 None,
                 Some(&new_x_cord.to_le_bytes()),
@@ -90,6 +91,7 @@ impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
             let node = T::new_leaf(blinding_factor.into(), &self.records[i], user_salt.into());
             leaf_nodes.push((node_pos, node));
         }
+        leaf_nodes.sort_by(|(a, _), (b, _)| a.0.cmp(&b.0));
         let padding_fn = |pos: &NodePosition| {
             new_padding_node_content(
                 &self.tree_params.master_secret.as_bytes_slice(),
@@ -170,7 +172,23 @@ pub fn test_tree_e2e() {
         master_secret,
     };
     let mut tree_builder: TreeBuilder<PartialNode, 3> =
-        TreeBuilder::new(rand_records, Height::new(2), tree_params);
-    let tree = tree_builder.build_single_threaded(Some(0)).unwrap();
-    println!("{:?}", tree); // prints the smt
+        TreeBuilder::new(rand_records, Height::new(2), tree_params.clone());
+    let tree = tree_builder.build_single_threaded(Some(2)).unwrap();
+    assert_eq!(tree.store.len(), 6);
+
+    let padding_fn = |pos: &NodePosition| {
+        new_padding_node_content(
+            &tree_params.master_secret.as_bytes_slice(),
+            &tree_params.salt_s.as_bytes(),
+            &tree_params.salt_b.as_bytes(),
+            pos,
+        )
+    };
+
+    let zero_pos = NodePosition::new(0, Height::new(0));
+    let zero_node = tree.store.get_node(&zero_pos).unwrap();
+    let path = Siblings::generate_path_single_threaded(&tree, zero_pos, &padding_fn).unwrap();
+    let root = path.get_root_from_path(zero_node, zero_pos);
+    assert_eq!(root, tree.root);
+    assert_eq!(path.0.len(), 2);
 }

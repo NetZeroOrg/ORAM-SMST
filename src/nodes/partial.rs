@@ -10,7 +10,7 @@ use mina_hasher::{create_legacy, Hasher};
 use super::TreeNode;
 
 /// The partial node contains partial information used in the merkle proofs to hide liabilities
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartialNode {
     commitment: CurvePoint,
     hash: BaseField,
@@ -61,7 +61,7 @@ impl TreeNode for PartialNode {
         // commitment left.com + right.com
         let commitment: CurvePoint = (left_child.commitment + right_child.commitment).into();
 
-        // H = H(left.com | right.com )
+        // H = H(left.com | right.com | left.hash | right.hash )
         let mut hasher = create_legacy::<Hashables>(());
         hasher.update(&Hashables::Commitment(left_child.commitment));
         hasher.update(&Hashables::Commitment(right_child.commitment));

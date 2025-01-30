@@ -104,7 +104,7 @@ pub fn build_tree<T: TreeNode + Clone + Debug, F: Fn(&NodePosition) -> PaddingNo
     }
 
     let mut nodes = leaf_nodes;
-    for y in (0..height.as_u8()).rev() {
+    for y in 0..height.as_u8() {
         let mut pairs = vec![];
         for (node_pos, node) in nodes.iter() {
             if y <= store_depth {
@@ -143,12 +143,14 @@ pub fn build_tree<T: TreeNode + Clone + Debug, F: Fn(&NodePosition) -> PaddingNo
                     }
                 }
             }
-            // pad nodes and put nodes = merge
-            pairs
-                .iter_mut()
-                .for_each(|pair| pair.pad_if_not_match(padding_node_content).unwrap());
         }
-        nodes = pairs.iter().map(|pair| pair.merge().unwrap()).collect();
+        nodes = pairs
+            .iter_mut()
+            .map(|pair| {
+                pair.pad_if_not_match(padding_node_content).unwrap();
+                pair.merge().unwrap()
+            })
+            .collect();
     }
 
     Ok(SMT {
