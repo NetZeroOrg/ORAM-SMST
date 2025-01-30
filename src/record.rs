@@ -1,15 +1,14 @@
 use num_bigint::BigUint;
-use rand::Rng;
+use rand::{distr::Alphanumeric, Rng};
 
-use crate::{hasher::Hashables, BaseField};
-use ark_std::UniformRand;
+use crate::hasher::Hashables;
 // contains the record from databse of the CEX
 // balances are the liability of the CEX
 // hashed email acts as Id
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Record<const N_CURR: usize> {
     balances: [u64; N_CURR],
-    hashed_email: BaseField,
+    pub hashed_email: String,
 }
 
 impl<const N_CURR: usize> Record<N_CURR> {
@@ -21,10 +20,10 @@ impl<const N_CURR: usize> Record<N_CURR> {
     }
 
     pub fn to_hashable(&self) -> Hashables {
-        Hashables::UserId(self.hashed_email)
+        Hashables::Id(self.hashed_email.clone())
     }
 
-    pub fn new(balances: &[u64; N_CURR], hashed_email: BaseField) -> Self {
+    pub fn new(balances: &[u64; N_CURR], hashed_email: String) -> Self {
         Self {
             balances: *balances,
             hashed_email,
@@ -34,11 +33,14 @@ impl<const N_CURR: usize> Record<N_CURR> {
 
 pub fn random_records<const N_CURR: usize>(num: u64) -> Vec<Record<N_CURR>> {
     let mut records = Vec::with_capacity(num as usize);
-    let mut rng = ark_std::rand::thread_rng();
+    let mut rng = rand::rng();
     for _ in 0..num {
         let mut balances = [u64::default(); N_CURR];
-        rand::rng().fill(&mut balances);
-        let rand_id = BaseField::rand(&mut rng);
+        rng.fill(&mut balances);
+        // assume 256 bit hash 1 hex -> 4 bits 256 / 4 =
+        let rand_id = (0..32)
+            .map(|_| format!("{:?}", rng.random_range(0..16)))
+            .collect();
         records.push(Record::new(&balances, rand_id));
     }
     records

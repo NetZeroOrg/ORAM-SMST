@@ -22,6 +22,12 @@ pub enum ErrorKind {
 
     #[error("Cannot find the node at {0} for which path is required")]
     CannotFindLeafNode(NodePosition),
+
+    #[error("The record for the user {0} was not used in constructing the tree")]
+    UserNotFound(String),
+
+    #[error("Cannot find file {0} to save merkle proofs for {1}")]
+    FileNotFound(String, String),
 }
 
 pub(crate) type Result<T> = std::result::Result<T, ErrorKind>;

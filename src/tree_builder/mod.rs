@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Debug};
 
+use serde::Serialize;
+
 use crate::{
     error::{ErrorKind, Result},
     node_position::{Direction, Height, NodePosition},
@@ -88,7 +90,10 @@ impl PaddingNodeContent {
 /// builds the whole tree from nodes and returns the root node
 /// store depth indicates the number of nodes to store in the hashmap
 /// this will be relative to the machine specification
-pub fn build_tree<T: TreeNode + Clone + Debug, F: Fn(&NodePosition) -> PaddingNodeContent>(
+pub fn build_tree<
+    T: TreeNode + Clone + Debug + Serialize,
+    F: Fn(&NodePosition) -> PaddingNodeContent,
+>(
     leaf_nodes: Vec<(NodePosition, T)>,
     height: &Height,
     store_depth: u8,

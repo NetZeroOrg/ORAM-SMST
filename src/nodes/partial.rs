@@ -6,13 +6,18 @@ use crate::{
     BaseField, CurvePoint,
 };
 use mina_hasher::{create_legacy, Hasher};
+use serde::Serialize;
+use serde_with::serde_as;
 
 use super::TreeNode;
 
 /// The partial node contains partial information used in the merkle proofs to hide liabilities
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[serde_as]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PartialNode {
+    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
     commitment: CurvePoint,
+    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
     hash: BaseField,
 }
 

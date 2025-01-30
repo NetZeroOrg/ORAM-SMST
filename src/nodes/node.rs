@@ -125,7 +125,7 @@ mod tests {
     use crate::{
         node_position::{Height, NodePosition},
         nodes::{node::Node, TreeNode},
-        record::Record,
+        record::{random_records, Record},
         secret::Secret,
         tree_builder::PaddingNodeContent,
         BaseField,
@@ -134,8 +134,8 @@ mod tests {
     #[test]
     fn node_e2e_works() {
         const N_CURR: usize = 1;
-        let balances = &[1u64];
-        let record = Record::<N_CURR>::new(balances, BaseField::from(1));
+        let _record = random_records::<1>(1);
+        let record = _record.last().unwrap();
         let blinding_factor = Secret::from(2u32);
         let user_secret = Secret::from(1u32);
         let leaf = Node::new_leaf(blinding_factor.clone(), &record, user_secret.clone());

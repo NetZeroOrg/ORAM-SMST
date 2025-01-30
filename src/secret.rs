@@ -6,7 +6,7 @@ use o1_utils::FieldHelpers;
 use rand::Rng;
 
 /// A 256-bit packet for the pedersen commitment
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct Secret([u8; 32]);
 
 impl Secret {

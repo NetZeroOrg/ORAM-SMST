@@ -4,19 +4,23 @@ use crate::{
     error::Result,
     kdf,
     node_position::{Height, NodePosition},
-    nodes::{node::Node, partial::PartialNode, TreeNode},
+    nodes::{partial::PartialNode, TreeNode},
+    proofs::MerkleWitness,
     record::{random_records, Record},
     salt::Salt,
     secret::{random_secret, Secret},
     siblings::Siblings,
     store::Store,
-    tree_builder::{self, PaddingNodeContent},
+    tree_builder::PaddingNodeContent,
 };
 use log::info;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
+use serde::Serialize;
 
+/// A map for the user string to the NodePosition
+pub(crate) type RecordMap = HashMap<String, NodePosition>;
 #[derive(Debug)]
-pub struct SMT<T: TreeNode + Clone + Debug> {
+pub struct SMT<T: TreeNode + Clone + Debug + Serialize> {
     pub root: T,
     pub store: Store<T>,
     pub height: Height,
@@ -29,7 +33,7 @@ pub struct TreeParams {
     pub salt_b: Salt,
 }
 
-pub struct TreeBuilder<T: TreeNode + Clone + Debug, const N_CURR: usize> {
+pub struct TreeBuilder<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> {
     records: Vec<Record<N_CURR>>,
     /// The position of leaf node in the vector to the hashmap
     x_cord_generator: XCordGenerator,
@@ -38,7 +42,7 @@ pub struct TreeBuilder<T: TreeNode + Clone + Debug, const N_CURR: usize> {
     _marker: PhantomData<T>,
 }
 
-impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
+impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T, N_CURR> {
     pub fn new(records: Vec<Record<N_CURR>>, height: Height, tree_params: TreeParams) -> Self {
         Self {
             records,
@@ -50,7 +54,10 @@ impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
     }
 
     /// build the tree single threaded and with given records
-    pub fn build_single_threaded(&mut self, store_depth: Option<u8>) -> Result<SMT<T>> {
+    pub fn build_single_threaded(
+        &mut self,
+        store_depth: Option<u8>,
+    ) -> Result<(SMT<T>, RecordMap)> {
         use crate::tree_builder::build_tree;
         info!(
             "ORAM-SMT Configuration
@@ -68,7 +75,9 @@ impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
         );
         let mut leaf_nodes = Vec::with_capacity(self.records.len());
 
-        for i in 0..self.records.len() {
+        let mut record_map = HashMap::new();
+
+        for record in &self.records {
             let new_x_cord = self.x_cord_generator.gen_x_cord()?;
             let node_pos = NodePosition::new(new_x_cord, Height::new(0));
             let master_secret = kdf::kdf(
@@ -81,15 +90,19 @@ impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
                 Some(&self.tree_params.salt_b.as_bytes()),
                 None,
                 &master_secret,
-            );
+            )
+            .into();
             // `s` in dapol +
             let user_salt = kdf::kdf(
                 Some(&self.tree_params.salt_s.as_bytes()),
                 None,
                 &master_secret,
-            );
-            let node = T::new_leaf(blinding_factor.into(), &self.records[i], user_salt.into());
+            )
+            .into();
+            let node = T::new_leaf(blinding_factor, &record, user_salt);
             leaf_nodes.push((node_pos, node));
+
+            record_map.insert(record.hashed_email.clone(), node_pos);
         }
         leaf_nodes.sort_by(|(a, _), (b, _)| a.0.cmp(&b.0));
         let padding_fn = |pos: &NodePosition| {
@@ -101,12 +114,15 @@ impl<T: TreeNode + Clone + Debug, const N_CURR: usize> TreeBuilder<T, N_CURR> {
             )
         };
 
-        build_tree(
-            leaf_nodes,
-            &self.height,
-            store_depth.unwrap_or_default(),
-            &padding_fn,
-        )
+        Ok((
+            build_tree(
+                leaf_nodes,
+                &self.height,
+                store_depth.unwrap_or_default(),
+                &padding_fn,
+            )?,
+            record_map,
+        ))
     }
 }
 
@@ -162,7 +178,8 @@ impl XCordGenerator {
 
 #[test]
 pub fn test_tree_e2e() {
-    let rand_records = random_records::<3>(4);
+    const NUM_NODES: u64 = 6;
+    let rand_records = random_records::<3>(NUM_NODES);
     let master_secret = random_secret();
     let salt_s = Salt::generate_random();
     let salt_b = Salt::generate_random();
@@ -172,9 +189,9 @@ pub fn test_tree_e2e() {
         master_secret,
     };
     let mut tree_builder: TreeBuilder<PartialNode, 3> =
-        TreeBuilder::new(rand_records, Height::new(2), tree_params.clone());
-    let tree = tree_builder.build_single_threaded(Some(2)).unwrap();
-    assert_eq!(tree.store.len(), 6);
+        TreeBuilder::new(rand_records.clone(), Height::new(3), tree_params.clone());
+    let (tree, record_map) = tree_builder.build_single_threaded(Some(0)).unwrap();
+    assert_eq!(tree.store.len(), NUM_NODES as usize);
 
     let padding_fn = |pos: &NodePosition| {
         new_padding_node_content(
@@ -185,10 +202,22 @@ pub fn test_tree_e2e() {
         )
     };
 
-    let zero_pos = NodePosition::new(0, Height::new(0));
-    let zero_node = tree.store.get_node(&zero_pos).unwrap();
-    let path = Siblings::generate_path_single_threaded(&tree, zero_pos, &padding_fn).unwrap();
-    let root = path.get_root_from_path(zero_node, zero_pos);
+    let random_pos = tree
+        .store
+        .map
+        .keys()
+        .find(|&&key| key.1.as_u32() == 0)
+        .unwrap();
+    let random_node = tree.store.get_node(random_pos).unwrap();
+
+    let path = Siblings::generate_path_single_threaded(&tree, *random_pos, &padding_fn).unwrap();
+
+    let root = path.get_root_from_path(random_node, *random_pos);
     assert_eq!(root, tree.root);
-    assert_eq!(path.0.len(), 2);
+    assert_eq!(path.0.len(), 3);
+
+    let random_user = rand_records[0].hashed_email.clone();
+    let merkle_witness: MerkleWitness<PartialNode, 3> =
+        MerkleWitness::generate_witness(random_user, &tree, &record_map, &padding_fn).unwrap();
+    merkle_witness.save(None).unwrap();
 }

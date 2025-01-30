@@ -6,7 +6,6 @@ use mina_hasher::{Hashable, ROInput};
 pub enum Hashables {
     Bytes(Vec<u8>),
     Secret(Secret),
-    UserId(BaseField),
     Commitment(CurvePoint),
     Hash(BaseField),
     Position(NodePosition),
@@ -29,7 +28,6 @@ impl Hashable for Hashables {
         match &self {
             Self::Bytes(bytes) => ROInput::new().append_bytes(&bytes),
             Self::Secret(sec) => ROInput::new().append_bytes(sec.as_bytes_slice()),
-            Self::UserId(s) => ROInput::new().append_field(*s),
             Self::Commitment(point) => {
                 let mut compressed_bytes = Vec::new();
                 point.serialize_compressed(&mut compressed_bytes).unwrap();
