@@ -14,6 +14,7 @@ use crate::{
     tree_builder::PaddingNodeContent,
 };
 use log::info;
+use o1_utils::FieldHelpers;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use serde::Serialize;
 
@@ -219,5 +220,8 @@ pub fn test_tree_e2e() {
     let random_user = rand_records[0].hashed_email.clone();
     let merkle_witness: MerkleWitness<PartialNode, 3> =
         MerkleWitness::generate_witness(random_user, &tree, &record_map, &padding_fn).unwrap();
+    println!("path {:?}", merkle_witness.path);
+    let comitment = merkle_witness.path.0[0].commitment.x;
+    println!("commitment in Fp {:?}", comitment.to_biguint(),);
     merkle_witness.save(None).unwrap();
 }

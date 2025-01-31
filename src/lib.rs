@@ -9,6 +9,7 @@ pub mod proofs;
 pub mod record;
 pub mod salt;
 pub mod secret;
+pub mod serialize;
 pub mod siblings;
 pub mod store;
 pub mod tier_ratios;

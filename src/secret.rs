@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use crate::{error::ErrorKind, ScalarField};
 use num_bigint::BigUint;
-use o1_utils::FieldHelpers;
 use rand::Rng;
 
 /// A 256-bit packet for the pedersen commitment

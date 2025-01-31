@@ -3,7 +3,7 @@ import type { Config } from 'jest';
 const config: Config = {
     verbose: true,
     rootDir: "./",
-    moduleDirectories: ["test"],
+    moduleDirectories: ["node_modules"],
     testPathIgnorePatterns: ["dist"],
     extensionsToTreatAsEsm: ['.ts'],
     testTimeout: 30_000,

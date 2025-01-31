@@ -1,9 +1,6 @@
 use crate::{
-    hasher::Hashables,
-    node_position::{self, NodePosition},
-    pedersen::Pedersen,
-    tree_builder::PaddingNodeContent,
-    BaseField, CurvePoint,
+    hasher::Hashables, node_position::NodePosition, pedersen::Pedersen,
+    tree_builder::PaddingNodeContent, BaseField, CurvePoint,
 };
 use mina_hasher::{create_legacy, Hasher};
 use serde::Serialize;
@@ -15,9 +12,9 @@ use super::TreeNode;
 #[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PartialNode {
-    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
-    commitment: CurvePoint,
-    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
+    #[serde_as(as = "crate::serialize::SerdeAs")]
+    pub commitment: CurvePoint,
+    #[serde_as(as = "crate::serialize::SerdeAs")]
     hash: BaseField,
 }
 

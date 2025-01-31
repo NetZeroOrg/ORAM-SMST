@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{error::Result, node_position::NodePosition, nodes::TreeNode};
 
-pub(crate) type NodeMap<T: TreeNode + Clone> = HashMap<NodePosition, T>;
+pub(crate) type NodeMap<T> = HashMap<NodePosition, T>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Store<T: TreeNode + Clone + Debug> {

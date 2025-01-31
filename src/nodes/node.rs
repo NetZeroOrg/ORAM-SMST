@@ -12,13 +12,14 @@ use serde_with::serde_as;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Node {
     liability: BigUint,
-    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
+    /// we are using `SerdeAsUnchecked` so we do not need to do uncompression logic in ts
+    #[serde_as(as = "o1_utils::serialization::SerdeAsUnchecked")]
     blinding_factor: ScalarField, // scalar
 
-    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
+    #[serde_as(as = "o1_utils::serialization::SerdeAsUnchecked")]
     commitment: CurvePoint,
 
-    #[serde_as(as = "o1_utils::serialization::SerdeAs")]
+    #[serde_as(as = "o1_utils::serialization::SerdeAsUnchecked")]
     hash: BaseField,
 }
 
@@ -125,15 +126,13 @@ mod tests {
     use crate::{
         node_position::{Height, NodePosition},
         nodes::{node::Node, TreeNode},
-        record::{random_records, Record},
+        record::random_records,
         secret::Secret,
         tree_builder::PaddingNodeContent,
-        BaseField,
     };
 
     #[test]
     fn node_e2e_works() {
-        const N_CURR: usize = 1;
         let _record = random_records::<1>(1);
         let record = _record.last().unwrap();
         let blinding_factor = Secret::from(2u32);

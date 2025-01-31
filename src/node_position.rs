@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::nodes::node::Node;
 #[derive(PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Hash, Debug)]
 pub struct Height(u8);
 

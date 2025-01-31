@@ -1,8 +1,4 @@
-use std::{
-    fmt::Debug,
-    fs::{File, OpenOptions},
-    io::Write,
-};
+use std::{fmt::Debug, fs::OpenOptions, io::Write};
 
 use serde::Serialize;
 
@@ -11,7 +7,7 @@ use crate::{
     node_position::NodePosition,
     nodes::TreeNode,
     siblings::Siblings,
-    tree::{self, RecordMap, SMT},
+    tree::{RecordMap, SMT},
     tree_builder::PaddingNodeContent,
 };
 
@@ -19,7 +15,6 @@ use crate::{
 #[derive(Serialize)]
 pub struct MerkleWitness<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> {
     pub path: Siblings<T>,
-    pub root: T,
     pub user_id: String,
 }
 
@@ -35,7 +30,6 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> MerkleWitness
             .ok_or(ErrorKind::UserNotFound(user_id.clone()))?;
         let siblings = Siblings::generate_path_single_threaded(tree, *node_pos, padding_fn)?;
         Ok(MerkleWitness {
-            root: tree.root.clone(),
             path: siblings,
             user_id,
         })
@@ -47,7 +41,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> MerkleWitness
             .write(true)
             .open(path.unwrap_or(&format!("proofs/{}.json", self.user_id)))
             .unwrap();
-        let proof_json = serde_json::ser::to_string(self).unwrap();
+        let proof_json = serde_json::ser::to_string(&self.path).unwrap();
         file.write_all(proof_json.as_bytes()).unwrap();
         Ok(())
     }

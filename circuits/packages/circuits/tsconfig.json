@@ -4,7 +4,8 @@
         "node_modules/jest-expect-message/types/index.d.ts"
     ],
     "include": [
-        "./src/**/*"
+        "./src/**/*",
+        "./test/**/*"
     ],
     "exclude": [
         "jest.config.cjs"

@@ -22,6 +22,7 @@
         "declarationMap": true,
         "strictFunctionTypes": true,
         "types": [
+            "node",
             "jest",
         ],
     }

@@ -919,6 +919,7 @@ dependencies = [
  "ark-serialize 0.4.2",
  "ark-std 0.5.0",
  "clap",
+ "hex",
  "hkdf",
  "log",
  "mina-curves",
