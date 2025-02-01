@@ -9,13 +9,14 @@ interface NodeData {
 interface MerkleWitness {
     path: NodeData[],
     lefts: boolean[]
-    userLeaf: NodeData
+    user_leaf: NodeData
+    root: NodeData
 }
 
 
 export class DeserialiseProofs {
 
-    static readProof(file: string): [CircuitMerkleWitness, NodeContent] {
+    static readProof(file: string): [CircuitMerkleWitness, NodeContent, NodeContent] {
         const jsonData = readFileSync(file, "utf-8")
         const data: MerkleWitness = JSON.parse(jsonData)
         let path = data.path.map((sibling) => this.nodeContentFromNode(sibling))
@@ -23,13 +24,15 @@ export class DeserialiseProofs {
         for (let index = path.length; index < 32; index++) {
             path.push(NodeContent.zero())
         }
-        const userLeaf = this.nodeContentFromNode(data.userLeaf)
+        const userLeaf = this.nodeContentFromNode(data.user_leaf)
+        const root = this.nodeContentFromNode(data.root)
         const lefts = data.lefts.map((left) => Bool.fromValue(left))
         for (let index = lefts.length; index < 32; index++) {
             lefts.push(Bool(false))
         }
-        return [new CircuitMerkleWitness({ path, lefts }), userLeaf]
+        return [new CircuitMerkleWitness({ path, lefts }), userLeaf, root]
     }
+
 
     static nodeContentFromNode({ commitment, hash }: NodeData): NodeContent {
         const groupCommitment = groupFromCommitment(commitment)

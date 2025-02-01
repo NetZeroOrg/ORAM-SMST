@@ -20,7 +20,7 @@ export const computeRoot = async (witness: MerkleWitness, userLeaf: NodeContent)
     return { publicOutput: new NodeContent({ commitment: rootComm, hash: rootHash }) }
 }
 
-const computeRootFromWitness = ZkProgram({
+export const computeRootProgram = ZkProgram({
     name: 'Compute Root',
     publicInput: MerkleWitness,
     publicOutput: NodeContent,
@@ -32,4 +32,4 @@ const computeRootFromWitness = ZkProgram({
     }
 })
 
-export class computeRootProof extends ZkProgram.Proof(computeRootFromWitness) { }
+export class computeRootProof extends ZkProgram.Proof(computeRootProgram) { }
