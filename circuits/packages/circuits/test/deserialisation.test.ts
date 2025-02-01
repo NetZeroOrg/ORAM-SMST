@@ -15,7 +15,8 @@ describe("Deserialization test", () => {
             assert(false, "No file in the Proof directory");
         } else {
             const file = path.join(PROOF_DIR, anyFile);
-            const merkleWitness = DeserialiseProofs.getProofPath(file)
+            const merkleWitness = DeserialiseProofs.readProof(file)
+            console.log(merkleWitness)
         }
     })
 })
