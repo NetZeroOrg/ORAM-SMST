@@ -15,7 +15,11 @@ use crate::{
 #[derive(Serialize)]
 pub struct MerkleWitness<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> {
     pub path: Siblings<T>,
-    pub user_id: String,
+    pub lefts: Vec<bool>,
+    pub user_leaf: T,
+    pub root: T,
+    #[serde(skip_serializing)]
+    pub _user_id: String,
 }
 
 impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> MerkleWitness<T, N_CURR> {
@@ -28,10 +32,15 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> MerkleWitness
         let node_pos = record_map
             .get(&user_id)
             .ok_or(ErrorKind::UserNotFound(user_id.clone()))?;
-        let siblings = Siblings::generate_path_single_threaded(tree, *node_pos, padding_fn)?;
+        let user_leaf = tree.store.get_node(node_pos).unwrap();
+        let (siblings, lefts) =
+            Siblings::generate_path_single_threaded(tree, *node_pos, padding_fn)?;
         Ok(MerkleWitness {
             path: siblings,
-            user_id,
+            user_leaf,
+            lefts,
+            root: tree.root.clone(),
+            _user_id: user_id,
         })
     }
     /// writes a the path in json format
@@ -39,9 +48,9 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> MerkleWitness
         let mut file = OpenOptions::new()
             .create(true)
             .write(true)
-            .open(path.unwrap_or(&format!("proofs/{}.json", self.user_id)))
+            .open(path.unwrap_or(&format!("proofs/{}.json", self._user_id)))
             .unwrap();
-        let proof_json = serde_json::ser::to_string(&self.path).unwrap();
+        let proof_json = serde_json::ser::to_string(&self).unwrap();
         file.write_all(proof_json.as_bytes()).unwrap();
         Ok(())
     }

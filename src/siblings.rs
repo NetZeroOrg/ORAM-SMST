@@ -18,7 +18,7 @@ impl<T: TreeNode + Clone + Debug + Serialize> Siblings<T> {
         tree: &SMT<T>,
         pos: NodePosition,
         padding_node_content: &F,
-    ) -> Result<Siblings<T>> {
+    ) -> Result<(Siblings<T>, Vec<bool>)> {
         // check even if the tree node consists
         let _ = tree
             .store
@@ -26,8 +26,10 @@ impl<T: TreeNode + Clone + Debug + Serialize> Siblings<T> {
             .ok_or(ErrorKind::CannotFindLeafNode(pos))?;
         let mut siblings = Vec::with_capacity(tree.height.as_u8() as usize);
         let mut current_pos = pos;
+        let mut lefts = vec![];
         for y in 0..tree.height.as_u8() {
             let siblings_pos = current_pos.get_sibling_pos();
+            lefts.push(siblings_pos.is_left());
             let sibling = match tree.store.get_node(&siblings_pos) {
                 Some(node) => node,
                 None => {
@@ -64,25 +66,22 @@ impl<T: TreeNode + Clone + Debug + Serialize> Siblings<T> {
             current_pos = current_pos.get_parent_node_pos();
         }
 
-        Ok(Siblings(siblings))
+        Ok((Siblings(siblings), lefts))
     }
 
     /// generates the root from the given path
-    pub fn get_root_from_path(&self, leaf_node: T, leaf_pos: NodePosition) -> T {
+    pub fn get_root_from_path(&self, leaf_node: T, lefts: &Vec<bool>) -> T {
         let mut root = leaf_node;
-        let mut current_pos = leaf_pos;
-        for node in self.0.iter() {
-            match current_pos.direction() {
-                Direction::Left => {
-                    root = T::merge(&root, node);
-                    current_pos = current_pos.get_parent_node_pos();
-                }
-                Direction::Right => {
+        for (node, left) in self.0.iter().zip(lefts) {
+            match left {
+                true => {
                     root = T::merge(node, &root);
-                    current_pos = current_pos.get_parent_node_pos();
+                }
+                false => {
+                    root = T::merge(&root, node);
                 }
             }
         }
-        root
+        root.clone()
     }
 }

@@ -16,7 +16,6 @@ describe("Deserialization test", () => {
         } else {
             const file = path.join(PROOF_DIR, anyFile);
             const merkleWitness = DeserialiseProofs.readProof(file)
-            console.log(merkleWitness)
         }
     })
 })

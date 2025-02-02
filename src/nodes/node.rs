@@ -1,8 +1,14 @@
 use super::{partial::PartialNode, TreeNode};
 use crate::{
-    hasher::Hashables, node_position::NodePosition, pedersen::Pedersen, record::Record,
-    secret::Secret, tree_builder::PaddingNodeContent, BaseField, CurvePoint, ScalarField,
+    hasher::{poseidon_hash, Hashables},
+    node_position::NodePosition,
+    pedersen::Pedersen,
+    record::Record,
+    secret::Secret,
+    tree_builder::PaddingNodeContent,
+    BaseField, CurvePoint, ScalarField,
 };
+use ark_ec::AffineRepr;
 use mina_hasher::{create_legacy, Hasher};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -102,14 +108,16 @@ impl TreeNode for Node {
         let blinding_factor: ScalarField = left_child.blinding_factor + right_child.blinding_factor;
         let commitment = (left_child.commitment + right_child.commitment).into();
 
-        // hash = `H(com_l | com_r | hash_l | hash_r)`
-        let mut hasher = create_legacy::<Hashables>(());
-        hasher.update(&Hashables::Commitment(left_child.commitment));
-        hasher.update(&Hashables::Commitment(right_child.commitment));
-        hasher.update(&Hashables::Hash(left_child.hash));
-        hasher.update(&Hashables::Hash(right_child.hash));
-
-        let hash = hasher.digest();
+        // H = H(left.com | right.com | left.hash | right.hash )
+        let hash_inputs = [
+            *left_child.commitment.x().unwrap(),
+            *left_child.commitment.y().unwrap(),
+            *right_child.commitment.x().unwrap(),
+            *right_child.commitment.y().unwrap(),
+            left_child.hash,
+            right_child.hash,
+        ];
+        let hash = poseidon_hash(&hash_inputs);
         Self {
             liability,
             blinding_factor,
@@ -126,14 +134,14 @@ mod tests {
     use crate::{
         node_position::{Height, NodePosition},
         nodes::{node::Node, TreeNode},
-        record::random_records,
+        record::Record,
         secret::Secret,
         tree_builder::PaddingNodeContent,
     };
 
     #[test]
     fn node_e2e_works() {
-        let _record = random_records::<1>(1);
+        let _record = vec![Record::new(&[1], String::from("S"))];
         let record = _record.last().unwrap();
         let blinding_factor = Secret::from(2u32);
         let user_secret = Secret::from(1u32);

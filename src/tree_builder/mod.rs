@@ -6,7 +6,6 @@ use crate::{
     error::{ErrorKind, Result},
     node_position::{Direction, Height, NodePosition},
     nodes::TreeNode,
-    record::Record,
     secret::Secret,
     tree::SMT,
 };

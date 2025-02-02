@@ -90,6 +90,18 @@ impl NodePosition {
         byts[1..].copy_from_slice(&self.0.to_le_bytes());
         byts
     }
+
+    /// get the x cordinate
+    pub fn x_cord(&self) -> u64 {
+        self.0
+    }
+
+    pub fn is_left(&self) -> bool {
+        match self.direction() {
+            Direction::Left => true,
+            Direction::Right => false,
+        }
+    }
 }
 
 #[test]

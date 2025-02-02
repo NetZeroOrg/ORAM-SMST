@@ -5,15 +5,13 @@ export const computeRoot = async (witness: MerkleWitness, userLeaf: NodeContent)
     assert(witness.lefts.length == witness.path.length, "The path length and left array do not match")
     let rootComm = userLeaf.commitment
     let rootHash = userLeaf.hash
-    for (let index = 0; index < witness.path.length; index++) {
+    for (let index = 0; index < 32; index++) {
         const leftComm = Provable.if(witness.lefts[index]!, witness.path[index]!.commitment, rootComm);
         const rightComm = Provable.if(witness.lefts[index]!, rootComm, witness.path[index]!.commitment);
         const newComm = leftComm.add(rightComm)
         const leftHash = Provable.if(witness.lefts[index]!, witness.path[index]!.hash, rootHash)
         const rightHash = Provable.if(witness.lefts[index]!, rootHash, witness.path[index]!.hash)
-
         const newHash = Poseidon.hash([...leftComm.toFields(), ...rightComm.toFields(), leftHash, rightHash])
-        // we added a padding element thus keep root hash same
         rootHash = Provable.if(newComm.equals(rootComm), rootHash, newHash)
         rootComm = newComm
     }

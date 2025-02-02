@@ -12,7 +12,9 @@ use crate::{
     siblings::Siblings,
     store::Store,
     tree_builder::PaddingNodeContent,
+    BaseField, ScalarField,
 };
+use ark_ff::PrimeField;
 use log::info;
 use o1_utils::FieldHelpers;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
@@ -203,25 +205,14 @@ pub fn test_tree_e2e() {
         )
     };
 
-    let random_pos = tree
-        .store
-        .map
-        .keys()
-        .find(|&&key| key.1.as_u32() == 0)
-        .unwrap();
-    let random_node = tree.store.get_node(random_pos).unwrap();
-
-    let path = Siblings::generate_path_single_threaded(&tree, *random_pos, &padding_fn).unwrap();
-
-    let root = path.get_root_from_path(random_node, *random_pos);
-    assert_eq!(root, tree.root);
-    assert_eq!(path.0.len(), 3);
-
     let random_user = rand_records[0].hashed_email.clone();
     let merkle_witness: MerkleWitness<PartialNode, 3> =
         MerkleWitness::generate_witness(random_user, &tree, &record_map, &padding_fn).unwrap();
-    println!("path {:?}", merkle_witness.path);
-    let comitment = merkle_witness.path.0[0].commitment.x;
-    println!("commitment in Fp {:?}", comitment.to_biguint(),);
+    let root = merkle_witness
+        .path
+        .get_root_from_path(merkle_witness.user_leaf.clone(), &merkle_witness.lefts);
+    assert_eq!(root, tree.root);
+    assert_eq!(merkle_witness.path.0.len(), 3);
+
     merkle_witness.save(None).unwrap();
 }

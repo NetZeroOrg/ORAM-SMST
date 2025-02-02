@@ -55,16 +55,16 @@ function groupFromCommitment(commitment: Array<number>): Group {
     const x = leBytesToBigint(commitment.slice(0, 32))
     const y = leBytesToBigint(commitment.slice(32, 64))
     const yflags = commitment[64]
-
+    /// if the point is at infinity flag
     if (yflags == 64) {
         return Group.zero
     }
-    return yflags == 128 ? Group({ x, y }).neg() : Group({ x, y })
+    return Group({ x, y })
 }
 /**
  * A wrapper function around the Big endian function to support little endian format
  * @param arr The array in little endian format
- * @returns 
+ * @returns  the bigint represeting the number
  */
 const leBytesToBigint = (arr: number[]): bigint => beBytesToBigint(new Uint8Array(arr.reverse()))
 

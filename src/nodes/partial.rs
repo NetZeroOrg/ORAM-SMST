@@ -1,8 +1,15 @@
+use std::fmt::Debug;
+
 use crate::{
-    hasher::Hashables, node_position::NodePosition, pedersen::Pedersen,
-    tree_builder::PaddingNodeContent, BaseField, CurvePoint,
+    hasher::{poseidon_hash, Hashables},
+    node_position::NodePosition,
+    pedersen::Pedersen,
+    tree_builder::PaddingNodeContent,
+    BaseField, CurvePoint,
 };
+use ark_ec::AffineRepr;
 use mina_hasher::{create_legacy, Hasher};
+use o1_utils::FieldHelpers;
 use serde::Serialize;
 use serde_with::serde_as;
 
@@ -10,7 +17,7 @@ use super::TreeNode;
 
 /// The partial node contains partial information used in the merkle proofs to hide liabilities
 #[serde_as]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Clone, PartialEq, Eq, Serialize)]
 pub struct PartialNode {
     #[serde_as(as = "crate::serialize::SerdeAs")]
     pub commitment: CurvePoint,
@@ -21,6 +28,17 @@ pub struct PartialNode {
 impl PartialNode {
     pub fn new(commitment: CurvePoint, hash: BaseField) -> Self {
         PartialNode { commitment, hash }
+    }
+}
+
+impl Debug for PartialNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "commitment {:?} hash {}",
+            self.commitment,
+            self.hash.to_biguint().to_str_radix(10)
+        )
     }
 }
 
@@ -64,14 +82,15 @@ impl TreeNode for PartialNode {
         let commitment: CurvePoint = (left_child.commitment + right_child.commitment).into();
 
         // H = H(left.com | right.com | left.hash | right.hash )
-        let mut hasher = create_legacy::<Hashables>(());
-        hasher.update(&Hashables::Commitment(left_child.commitment));
-        hasher.update(&Hashables::Commitment(right_child.commitment));
-        hasher.update(&Hashables::Hash(left_child.hash));
-        hasher.update(&Hashables::Hash(right_child.hash));
-        Self {
-            hash: hasher.digest(),
-            commitment,
-        }
+        let hash_inputs = [
+            *left_child.commitment.x().unwrap(),
+            *left_child.commitment.y().unwrap(),
+            *right_child.commitment.x().unwrap(),
+            *right_child.commitment.y().unwrap(),
+            left_child.hash,
+            right_child.hash,
+        ];
+        let hash = poseidon_hash(&hash_inputs);
+        Self { hash, commitment }
     }
 }

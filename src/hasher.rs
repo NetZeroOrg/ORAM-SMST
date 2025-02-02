@@ -1,6 +1,11 @@
 use crate::{node_position::NodePosition, secret::Secret, BaseField, CurvePoint};
 use ark_serialize::CanonicalSerialize;
 use mina_hasher::{Hashable, ROInput};
+use mina_poseidon::{
+    constants::PlonkSpongeConstantsKimchi,
+    pasta::fp_kimchi,
+    poseidon::{ArithmeticSponge as Poseidon, Sponge as _},
+};
 
 #[derive(Clone)]
 pub enum Hashables {
@@ -46,4 +51,11 @@ impl Hashable for Hashables {
     fn domain_string(_domain_param: Self::D) -> Option<String> {
         format!("Bytes hashed").into()
     }
+}
+
+pub fn poseidon_hash(field_elems: &[BaseField]) -> BaseField {
+    let mut hash =
+        Poseidon::<BaseField, PlonkSpongeConstantsKimchi>::new(fp_kimchi::static_params());
+    hash.absorb(field_elems);
+    hash.squeeze()
 }
