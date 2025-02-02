@@ -7,14 +7,19 @@ If we had a normal tree much like most of the implementations a user might obser
 
 This is a access pattern leakage attach. This implemenation is based on ORAM-based SMT introduced in the [DAPOL +](https://eprint.iacr.org/2021/1350.pdf) the implementation is adapted to our usecase of Proof of Solvency in case of a blockchain custodian
 
-You rarely need to store the full merkle tree but for ORAM implementation that is path ORAM in the protocol we need to know the full leaves positions to allow for random access
+## Running Test for Tree and circuits
 
-So the build functions look something like this:
+To run the test tree there is an `e2e` test in the `src/tree.rs`
 
-```rust
-pub fn build_tree(
-    leaf_nodes: Vec<(usize , Node)>
-    //                  ^
-    //              This is the position of node in the position map
-)
+```bash
+cargo test tree_tree
 ```
+
+This creates the tree from random records, finds a path for a random leaf , stores this merkle proof in a json file which is then used for the circuit test
+To run the circuit tests run this command
+
+```bash
+cd circuits && pnpm i && pnpm test
+```
+
+This runs the test on a sample proof in `circuits/sample/test_proof.json` esentially reconstructing the root from the given parameters
