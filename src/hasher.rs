@@ -31,7 +31,7 @@ impl Hashable for Hashables {
     type D = ();
     fn to_roinput(&self) -> ROInput {
         match &self {
-            Self::Bytes(bytes) => ROInput::new().append_bytes(&bytes),
+            Self::Bytes(bytes) => ROInput::new().append_bytes(bytes),
             Self::Secret(sec) => ROInput::new().append_bytes(sec.as_bytes_slice()),
             Self::Commitment(point) => {
                 let mut compressed_bytes = Vec::new();
@@ -49,7 +49,7 @@ impl Hashable for Hashables {
     }
 
     fn domain_string(_domain_param: Self::D) -> Option<String> {
-        format!("Bytes hashed").into()
+        "Bytes hashed".to_string().into()
     }
 }
 

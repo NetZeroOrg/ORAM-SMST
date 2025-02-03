@@ -4,19 +4,14 @@ use crate::{
     error::Result,
     kdf,
     node_position::{Height, NodePosition},
-    nodes::{partial::PartialNode, TreeNode},
-    proofs::MerkleWitness,
-    record::{random_records, Record},
+    nodes::TreeNode,
+    record::Record,
     salt::Salt,
-    secret::{random_secret, Secret},
-    siblings::Siblings,
+    secret::Secret,
     store::Store,
     tree_builder::PaddingNodeContent,
-    BaseField, ScalarField,
 };
-use ark_ff::PrimeField;
 use log::info;
-use o1_utils::FieldHelpers;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use serde::Serialize;
 
@@ -61,7 +56,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T
         &mut self,
         store_depth: Option<u8>,
     ) -> Result<(SMT<T>, RecordMap)> {
-        use crate::tree_builder::build_tree;
+        use crate::tree_builder::single::single_threaded_tree_builder;
         info!(
             "ORAM-SMT Configuration
             +----------------+------------------------+
@@ -102,7 +97,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T
                 &master_secret,
             )
             .into();
-            let node = T::new_leaf(blinding_factor, &record, user_salt);
+            let node = T::new_leaf(blinding_factor, record, user_salt);
             leaf_nodes.push((node_pos, node));
 
             record_map.insert(record.hashed_email.clone(), node_pos);
@@ -110,7 +105,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T
         leaf_nodes.sort_by(|(a, _), (b, _)| a.0.cmp(&b.0));
         let padding_fn = |pos: &NodePosition| {
             new_padding_node_content(
-                &self.tree_params.master_secret.as_bytes_slice(),
+                self.tree_params.master_secret.as_bytes_slice(),
                 &self.tree_params.salt_s.as_bytes(),
                 &self.tree_params.salt_b.as_bytes(),
                 pos,
@@ -118,7 +113,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T
         };
 
         Ok((
-            build_tree(
+            single_threaded_tree_builder(
                 leaf_nodes,
                 &self.height,
                 store_depth.unwrap_or_default(),
@@ -178,41 +173,53 @@ impl XCordGenerator {
         Ok(x)
     }
 }
-
-#[test]
-pub fn test_tree_e2e() {
-    const NUM_NODES: u64 = 6;
-    let rand_records = random_records::<3>(NUM_NODES);
-    let master_secret = random_secret();
-    let salt_s = Salt::generate_random();
-    let salt_b = Salt::generate_random();
-    let tree_params = TreeParams {
-        salt_b,
-        salt_s,
-        master_secret,
-    };
-    let mut tree_builder: TreeBuilder<PartialNode, 3> =
-        TreeBuilder::new(rand_records.clone(), Height::new(3), tree_params.clone());
-    let (tree, record_map) = tree_builder.build_single_threaded(Some(0)).unwrap();
-    assert_eq!(tree.store.len(), NUM_NODES as usize);
-
-    let padding_fn = |pos: &NodePosition| {
-        new_padding_node_content(
-            &tree_params.master_secret.as_bytes_slice(),
-            &tree_params.salt_s.as_bytes(),
-            &tree_params.salt_b.as_bytes(),
-            pos,
-        )
+#[cfg(test)]
+mod tests {
+    use crate::{
+        node_position::{Height, NodePosition},
+        nodes::partial::PartialNode,
+        proofs::MerkleWitness,
+        record::random_records,
+        salt::Salt,
+        secret::random_secret,
+        tree::{new_padding_node_content, TreeBuilder, TreeParams},
     };
 
-    let random_user = rand_records[0].hashed_email.clone();
-    let merkle_witness: MerkleWitness<PartialNode, 3> =
-        MerkleWitness::generate_witness(random_user, &tree, &record_map, &padding_fn).unwrap();
-    let root = merkle_witness
-        .path
-        .get_root_from_path(merkle_witness.user_leaf.clone(), &merkle_witness.lefts);
-    assert_eq!(root, tree.root);
-    assert_eq!(merkle_witness.path.0.len(), 3);
+    #[test]
+    pub fn test_tree_e2e() {
+        const NUM_NODES: u64 = 6;
+        let rand_records = random_records::<3>(NUM_NODES);
+        let master_secret = random_secret();
+        let salt_s = Salt::generate_random();
+        let salt_b = Salt::generate_random();
+        let tree_params = TreeParams {
+            salt_b,
+            salt_s,
+            master_secret,
+        };
+        let mut tree_builder: TreeBuilder<PartialNode, 3> =
+            TreeBuilder::new(rand_records.clone(), Height::new(3), tree_params.clone());
+        let (tree, record_map) = tree_builder.build_single_threaded(Some(0)).unwrap();
+        assert_eq!(tree.store.len(), NUM_NODES as usize);
 
-    merkle_witness.save(None).unwrap();
+        let padding_fn = |pos: &NodePosition| {
+            new_padding_node_content(
+                &tree_params.master_secret.as_bytes_slice(),
+                &tree_params.salt_s.as_bytes(),
+                &tree_params.salt_b.as_bytes(),
+                pos,
+            )
+        };
+
+        let random_user = rand_records[0].hashed_email.clone();
+        let merkle_witness: MerkleWitness<PartialNode, 3> =
+            MerkleWitness::generate_witness(random_user, &tree, &record_map, &padding_fn).unwrap();
+        let root = merkle_witness
+            .path
+            .get_root_from_path(merkle_witness.user_leaf.clone(), &merkle_witness.lefts);
+        assert_eq!(root, tree.root);
+        assert_eq!(merkle_witness.path.0.len(), 3);
+
+        merkle_witness.save(None).unwrap();
+    }
 }

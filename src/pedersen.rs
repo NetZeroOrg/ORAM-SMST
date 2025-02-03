@@ -12,16 +12,16 @@ pub struct Pedersen {
     /// Base point for the bliding factor defaults as a random point
     pub base_blinding: CurvePoint,
 }
-
-impl Pedersen {
-    pub fn default() -> Pedersen {
+impl Default for Pedersen {
+    fn default() -> Self {
         let mut rng = StdRng::seed_from_u64(0u64);
         Pedersen {
             base: CurvePoint::new(G_GENERATOR_X, G_GENERATOR_Y),
             base_blinding: CurvePoint::rand(&mut rng),
         }
     }
-
+}
+impl Pedersen {
     pub fn commit(&self, value: ScalarField, blinding: ScalarField) -> CurvePoint {
         let res = self.base.mul(&value) + self.base_blinding.mul(&blinding);
         res.into()

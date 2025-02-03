@@ -11,6 +11,14 @@ pub struct Store<T: TreeNode + Clone + Debug> {
     pub map: NodeMap<T>,
 }
 
+impl<T: TreeNode + Clone + Debug> Default for Store<T> {
+    fn default() -> Self {
+        Self {
+            map: HashMap::new(),
+        }
+    }
+}
+
 impl<T> Store<T>
 where
     T: TreeNode + Clone + Debug,
@@ -26,6 +34,10 @@ where
 
     pub fn len(&self) -> usize {
         self.map.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
     }
 
     pub fn insert(&mut self, node: T, position: NodePosition) -> Result<()> {

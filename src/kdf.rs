@@ -1,5 +1,3 @@
-use crate::BaseField;
-use o1_utils::FieldHelpers;
 use sha2::Sha256;
 
 /// This is the key derivation function for the protocol
@@ -10,7 +8,7 @@ pub fn kdf(salt: Option<&[u8]>, id: Option<&[u8]>, ikm: &[u8]) -> [u8; 32] {
     }
     let hk = hkdf::Hkdf::<Sha256>::new(salt, ikm);
     let mut okm = [0u8; 32];
-    hk.expand(&id.unwrap_or_default(), &mut okm)
+    hk.expand(id.unwrap_or_default(), &mut okm)
         .expect("42 is a valid length for Sha256 to output");
     okm
 }

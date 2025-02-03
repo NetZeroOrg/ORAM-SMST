@@ -55,5 +55,5 @@ impl FromStr for Secret {
 }
 
 pub fn random_secret() -> Secret {
-    return Secret::from(rand::rng().random::<u32>());
+    Secret::from(rand::rng().random::<u32>())
 }

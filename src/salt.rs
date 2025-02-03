@@ -11,7 +11,7 @@ pub struct Salt([u8; 32]);
 
 impl Salt {
     pub fn as_bytes(&self) -> [u8; 32] {
-        return self.0;
+        self.0
     }
 
     pub fn generate_random() -> Self {
@@ -21,10 +21,7 @@ impl Salt {
     }
 
     pub fn as_hex(&self) -> String {
-        self.0
-            .iter()
-            .map(|b| format!("{:02x}", b))
-            .collect::<String>()
+        hex::encode(self.0)
     }
 }
 

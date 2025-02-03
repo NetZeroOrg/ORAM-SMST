@@ -1,7 +1,8 @@
 use num_bigint::BigUint;
-use rand::{distr::Alphanumeric, Rng};
+use rand::Rng;
+use sha2::{Digest, Sha256};
 
-use crate::hasher::Hashables;
+use crate::{error::Result, hasher::Hashables};
 // contains the record from databse of the CEX
 // balances are the liability of the CEX
 // hashed email acts as Id
@@ -38,10 +39,14 @@ pub fn random_records<const N_CURR: usize>(num: u64) -> Vec<Record<N_CURR>> {
         let mut balances = [u64::default(); N_CURR];
         rng.fill(&mut balances);
         // assume 256 bit hash 1 hex -> 4 bits 256 / 4 =
-        let rand_id = (0..32)
-            .map(|_| format!("{:?}", rng.random_range(0..16)))
-            .collect();
-        records.push(Record::new(&balances, rand_id));
+        let rand_id = rng.random::<u32>();
+        let rand_email = format!("random_{}@gmail.com", rand_id);
+        let hashed_email = hex::encode(Sha256::digest(rand_email));
+        records.push(Record::new(&balances, hashed_email));
     }
     records
+}
+
+pub fn store_random_records_in_db() -> Result<()> {
+    Ok(())
 }

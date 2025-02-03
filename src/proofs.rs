@@ -47,6 +47,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> MerkleWitness
     pub fn save(&self, path: Option<&str>) -> Result<()> {
         let mut file = OpenOptions::new()
             .create(true)
+            .truncate(true)
             .write(true)
             .open(path.unwrap_or(&format!("proofs/{}.json", self._user_id)))
             .unwrap();

@@ -4,10 +4,10 @@ use serde::Serialize;
 
 use crate::{
     error::{ErrorKind, Result},
-    node_position::{Direction, Height, NodePosition},
+    node_position::{Height, NodePosition},
     nodes::TreeNode,
     tree::SMT,
-    tree_builder::{build_tree, PaddingNodeContent},
+    tree_builder::{single::single_threaded_tree_builder, PaddingNodeContent},
 };
 
 #[derive(Debug, Serialize)]
@@ -46,17 +46,20 @@ impl<T: TreeNode + Clone + Debug + Serialize> Siblings<T> {
                         let mut leaf_nodes = vec![];
                         for x in x_min_cord..=x_max_cord {
                             let leaf_pos = NodePosition::new(x, Height::new(0));
-                            match tree.store.get_node(&leaf_pos) {
-                                Some(leaf_node) => leaf_nodes.push((leaf_pos, leaf_node)),
-                                None => (),
+                            if let Some(leaf_node) = tree.store.get_node(&leaf_pos) {
+                                leaf_nodes.push((leaf_pos, leaf_node));
                             }
                         }
                         if leaf_nodes.is_empty() {
                             let padding_node_content = padding_node_content(&siblings_pos);
                             T::new_pad(padding_node_content, siblings_pos)
                         } else {
-                            let sub_tree =
-                                build_tree(leaf_nodes, &Height::new(y), 0, padding_node_content)?;
+                            let sub_tree = single_threaded_tree_builder(
+                                leaf_nodes,
+                                &Height::new(y),
+                                0,
+                                padding_node_content,
+                            )?;
                             sub_tree.root
                         }
                     }
