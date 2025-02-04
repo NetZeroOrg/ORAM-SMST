@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package smt;
+
+/**
+* Request a proof for a particular user
+*/
+message RequestProof {
+    // The user email for whicb the proof is requested
+    string user_email = 1
+
+    // fetch root is set to true for testing purposes and may be requried internally
+    optional bool fetch_root = 2
+
+    // fech the user node again required for testing purposes 
+    optional bool fetch_user_node = 3
+}
+
+/**
+* The node struct to serialize the data
+*/
+message NodeContent {
+    bytes commitment    = 1
+    bytes hash          = 2 
+}
+
+/**
+* The proof generated for a given user
+*/
+message Proof {
+    repeated NodeContent path       = 1
+    repeated bool lefts             = 2
+    optional NodeContent root       = 3
+    optional NodeContent user_node  = 4
+    string for_user                 = 5
+    bytes master_salt               = 6
+}
+
+message Balances {
+    repeated uint64 balances = 1
+}
+
+message SetRecordsRequest {
+   repeated Balances balances
+   repeated userNames  
+}
+
+message Response {
+    string msg
+}
+
+message SetTreeParamsRequest {
+    bytes master_salt
+    bytes auth_token
+}
+
+service SMTBackend {
+    rpc GenerateProof(RequestProof) returns (Proof);
+    rpc SetUserData(SetRecordsRequest) returns (Response);
+    rpc SetTreeParams(SetTreeParamsRequest) returns (Response);
+}
