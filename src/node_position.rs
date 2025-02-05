@@ -20,7 +20,7 @@ impl Height {
 
     /// Returns the number of height given leaf nodes
     pub fn from_leaf_nodes_len(len: u64) -> Self {
-        let height = len.ilog2() as u8;
+        let height = len.ilog2() as u8 + 1;
         Self::new(height)
     }
 

@@ -8,6 +8,7 @@ use crate::smt::{
     NodeContent, Proof, RequestProof, Response as SetRecordResponse, SetRecordRequest,
 };
 use crate::tree::{self, new_padding_node_content, TreeBuilder};
+use sha2::Digest;
 use tonic::{Request, Response, Status};
 
 use std::sync::{Arc, Mutex};
@@ -50,7 +51,8 @@ impl<const N_CURR: usize> SmtBackend for Server<N_CURR> {
         let (tree, record_map) = tree_builder
             .build_single_threaded(None)
             .map_err(|err| Status::aborted(err.to_string()))?;
-        if !record_map.contains_key(&request.user_email) {
+        let hashed_email = hex::encode(sha2::Sha256::digest(request.user_email.clone()));
+        if !record_map.contains_key(&hashed_email) {
             return Err(Status::invalid_argument(USER_NOT_FOUND));
         }
         let padding_fn = |pos: &NodePosition| {
@@ -62,13 +64,9 @@ impl<const N_CURR: usize> SmtBackend for Server<N_CURR> {
             )
         };
 
-        let witness: MerkleWitness<PartialNode, N_CURR> = MerkleWitness::generate_witness(
-            request.user_email.clone(),
-            &tree,
-            &record_map,
-            &padding_fn,
-        )
-        .map_err(|err| Status::aborted(err.to_string()))?;
+        let witness: MerkleWitness<PartialNode, N_CURR> =
+            MerkleWitness::generate_witness(hashed_email, &tree, &record_map, &padding_fn)
+                .map_err(|err| Status::aborted(err.to_string()))?;
         let mut node_contents: Vec<NodeContent> = vec![];
         for node in witness.path.0 {
             node_contents.push(node.into());
