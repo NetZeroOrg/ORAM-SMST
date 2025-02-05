@@ -1,2 +1,4 @@
 /target
 /proofs
+.venv
+.ruff_cache

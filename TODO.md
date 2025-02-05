@@ -1,0 +1,3 @@
+ - [ ] Add grpc and db from csv
+ - [ ] Create contract 
+ - [ ] Add demo ui for contract interaction
