@@ -1,17 +1,20 @@
 use super::{partial::PartialNode, TreeNode};
 use crate::{
+    error::ErrorKind,
     hasher::{poseidon_hash, Hashables},
     node_position::NodePosition,
     pedersen::Pedersen,
     record::Record,
     secret::Secret,
+    smt::NodeContent,
     tree_builder::PaddingNodeContent,
     BaseField, CurvePoint, ScalarField,
 };
 use ark_ec::AffineRepr;
+use ark_serialize::CanonicalSerialize;
 use mina_hasher::{create_legacy, Hasher};
 use num_bigint::BigUint;
-use serde::{Deserialize, Serialize};
+use serde::{de::Error, Deserialize, Serialize};
 use serde_with::serde_as;
 /// A Node for the SMT
 #[serde_as]
@@ -127,6 +130,21 @@ impl TreeNode for Node {
     }
 }
 
+impl Into<NodeContent> for Node {
+    fn into(self) -> NodeContent {
+        let mut bytes_commitemnt = vec![];
+        self.commitment
+            .serialize_uncompressed(&mut bytes_commitemnt)
+            .unwrap();
+
+        let mut bytes_hash = vec![];
+        self.hash.serialize_uncompressed(&mut bytes_hash).unwrap();
+        NodeContent {
+            commitment: bytes_commitemnt,
+            hash: bytes_hash,
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use num_bigint::BigUint;

@@ -21,6 +21,10 @@ impl Secret {
         let biguint = BigUint::from_bytes_be(&self.0);
         ScalarField::from(biguint)
     }
+
+    pub fn as_vec(&self) -> Vec<u8> {
+        self.0.to_vec()
+    }
 }
 
 impl From<u32> for Secret {

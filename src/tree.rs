@@ -11,7 +11,6 @@ use crate::{
     store::Store,
     tree_builder::PaddingNodeContent,
 };
-use log::info;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use serde::Serialize;
 
@@ -24,13 +23,14 @@ pub struct SMT<T: TreeNode + Clone + Debug + Serialize> {
     pub height: Height,
 }
 /// The tree paramets such as `master_salt` , `salt_s` , `salt_b`
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TreeParams {
-    master_secret: Secret,
+    pub master_secret: Secret,
     pub salt_s: Salt,
     pub salt_b: Salt,
 }
 
+#[derive(Debug)]
 pub struct TreeBuilder<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> {
     records: Vec<Record<N_CURR>>,
     /// The position of leaf node in the vector to the hashmap
@@ -51,13 +51,18 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T
         }
     }
 
+    pub fn from_records(records: Vec<Record<N_CURR>>, tree_params: TreeParams) -> Self {
+        let height = Height::from_leaf_nodes_len(records.len() as u64);
+        Self::new(records, height, tree_params)
+    }
+
     /// build the tree single threaded and with given records
     pub fn build_single_threaded(
         &mut self,
         store_depth: Option<u8>,
     ) -> Result<(SMT<T>, RecordMap)> {
         use crate::tree_builder::single::single_threaded_tree_builder;
-        info!(
+        tracing::info!(
             "ORAM-SMT Configuration
             +----------------+------------------------+
             | Height         | {height:16} |
@@ -137,6 +142,7 @@ pub fn new_padding_node_content(
     PaddingNodeContent::new(blinding_factor.into(), user_secret.into())
 }
 
+#[derive(Debug)]
 /// An X cordinate generator
 pub struct XCordGenerator {
     rng: SmallRng,

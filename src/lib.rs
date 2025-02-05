@@ -1,5 +1,6 @@
 pub mod db;
 mod error;
+pub mod grpc;
 pub mod hasher;
 pub mod kdf;
 pub mod node_position;
@@ -12,6 +13,7 @@ pub mod salt;
 pub mod secret;
 pub mod serialize;
 pub mod siblings;
+pub mod smt;
 pub mod store;
 pub mod tier_ratios;
 pub mod tree;

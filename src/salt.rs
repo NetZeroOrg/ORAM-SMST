@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use crate::error::ErrorKind;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Salt([u8; 32]);
 
 impl Salt {
@@ -38,5 +38,11 @@ impl FromStr for Salt {
             arr[..s.len()].copy_from_slice(s.as_bytes());
             Ok(Salt(arr))
         }
+    }
+}
+
+impl From<[u8; 32]> for Salt {
+    fn from(value: [u8; 32]) -> Self {
+        Salt(value)
     }
 }

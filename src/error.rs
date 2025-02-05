@@ -28,6 +28,12 @@ pub enum ErrorKind {
 
     #[error("Cannot find file {0} to save merkle proofs for {1}")]
     FileNotFound(String, String),
+
+    #[error("Expected the field {0} in the csv")]
+    CsvParserErrorFieldNotFound(String),
+
+    #[error("File {0} not found")]
+    CsvParserErrorFiledNotFound(String),
 }
 
 pub(crate) type Result<T> = std::result::Result<T, ErrorKind>;

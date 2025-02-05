@@ -1,19 +1,20 @@
 use std::fmt::Debug;
 
+use super::TreeNode;
 use crate::{
     hasher::{poseidon_hash, Hashables},
     node_position::NodePosition,
     pedersen::Pedersen,
+    smt::NodeContent,
     tree_builder::PaddingNodeContent,
     BaseField, CurvePoint,
 };
 use ark_ec::AffineRepr;
+use ark_serialize::CanonicalSerialize;
 use mina_hasher::{create_legacy, Hasher};
 use o1_utils::FieldHelpers;
 use serde::Serialize;
 use serde_with::serde_as;
-
-use super::TreeNode;
 
 /// The partial node contains partial information used in the merkle proofs to hide liabilities
 #[serde_as]
@@ -92,5 +93,21 @@ impl TreeNode for PartialNode {
         ];
         let hash = poseidon_hash(&hash_inputs);
         Self { hash, commitment }
+    }
+}
+
+impl Into<NodeContent> for PartialNode {
+    fn into(self) -> NodeContent {
+        let mut bytes_commitemnt = vec![];
+        self.commitment
+            .serialize_uncompressed(&mut bytes_commitemnt)
+            .unwrap();
+
+        let mut bytes_hash = vec![];
+        self.hash.serialize_uncompressed(&mut bytes_hash).unwrap();
+        NodeContent {
+            commitment: bytes_commitemnt,
+            hash: bytes_hash,
+        }
     }
 }
