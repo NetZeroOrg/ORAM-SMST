@@ -116,6 +116,7 @@ impl<T: TreeNode + Clone + Debug + Serialize, const N_CURR: usize> TreeBuilder<T
                 pos,
             )
         };
+        self.x_cord_generator.flush();
 
         Ok((
             single_threaded_tree_builder(
@@ -177,6 +178,11 @@ impl XCordGenerator {
         self.x_cords.insert(x, self.i);
         self.i += 1;
         Ok(x)
+    }
+
+    pub fn flush(&mut self) {
+        self.i = 0;
+        self.x_cords.clear();
     }
 }
 #[cfg(test)]

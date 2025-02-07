@@ -51,8 +51,11 @@ impl<const N_CURR: usize> SmtBackend for Server<N_CURR> {
         let (tree, record_map) = tree_builder
             .build_single_threaded(None)
             .map_err(|err| Status::aborted(err.to_string()))?;
+        tracing::debug!("user email {}", request.user_email);
         let hashed_email = hex::encode(sha2::Sha256::digest(request.user_email.clone()));
         if !record_map.contains_key(&hashed_email) {
+            tracing::debug!("Not found user");
+            tracing::debug!("map {:?}", record_map);
             return Err(Status::invalid_argument(USER_NOT_FOUND));
         }
         let padding_fn = |pos: &NodePosition| {
