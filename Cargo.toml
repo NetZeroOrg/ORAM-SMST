@@ -20,6 +20,7 @@ mina-hasher = { git = "https://github.com/o1-labs/proof-systems", version = "0.1
 mina-poseidon = { git = "https://github.com/o1-labs/proof-systems", version = "0.1.0" }
 num-bigint = "0.4.6"
 o1-utils = { git = "https://github.com/o1-labs/proof-systems", version = "0.1.0" }
+poly-commitment = { git = "https://github.com/o1-labs/proof-systems", version = "0.1.0" }
 prost = "0.13.4"
 rand = "0.9.0"
 rayon = "1.10.0"

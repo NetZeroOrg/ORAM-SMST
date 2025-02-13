@@ -8,6 +8,7 @@ pub mod nodes;
 pub mod path_oram;
 pub mod pedersen;
 pub mod proofs;
+pub mod range_check;
 pub mod record;
 pub mod salt;
 pub mod secret;
